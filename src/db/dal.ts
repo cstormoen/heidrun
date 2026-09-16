@@ -107,7 +107,7 @@ export const DAL = {
     });
   },
 
-  updateEvent: (id: number, data: any, timestamp: string): void => {
+  updateEvent: (id: number, data: any, timestamp: string, type?: string): void => {
     const oldEv = DAL.getEventById(id);
     // If it's a linked addition, and quantity changed, adjust inventory
     if (oldEv && oldEv.type === 'addition' && oldEv.data?.inventory_item_id && data?.inventory_item_id) {
@@ -123,11 +123,20 @@ export const DAL = {
           }
        }
     }
-    db.run("UPDATE events SET data = $data, timestamp = $timestamp WHERE id = $id", {
-      $id: id,
-      $data: JSON.stringify(data),
-      $timestamp: timestamp
-    });
+    if (type) {
+      db.run("UPDATE events SET data = $data, timestamp = $timestamp, type = $type WHERE id = $id", {
+        $id: id,
+        $data: JSON.stringify(data),
+        $timestamp: timestamp,
+        $type: type
+      });
+    } else {
+      db.run("UPDATE events SET data = $data, timestamp = $timestamp WHERE id = $id", {
+        $id: id,
+        $data: JSON.stringify(data),
+        $timestamp: timestamp
+      });
+    }
   },
 
   getInventoryItems: (): InventoryItem[] => {

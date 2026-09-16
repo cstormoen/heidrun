@@ -28,7 +28,8 @@ const BASE_HTML = `
 </head>
 <body class="bg-base-200 text-base-content min-h-screen">
   <div class="navbar bg-base-100 shadow-sm mb-4">
-    <div class="flex-1">
+    <div class="flex-1 flex items-center gap-2 px-2">
+      <img src="/heidrun.jpeg" alt="Logo" class="w-12 h-12 rounded-full" />
       <a class="btn btn-ghost normal-case text-xl" href="/" hx-get="/" hx-target="#main-content" hx-push-url="true">Heidrun</a>
       <a class="btn btn-ghost normal-case" href="/pantry" hx-get="/pantry" hx-target="#main-content" hx-push-url="true">Pantry</a>
     </div>
@@ -244,6 +245,7 @@ function renderSessionDetail(sessionId: number): string {
         
         let totalCost = 0;
         const usedItems: string[] = [];
+        const groupedLinked = new Map<number, { invItem: any, totalQty: number, cost: number }>();
         
         additionEvents.forEach(e => {
            if (e.data?.inventory_item_id) {
@@ -251,15 +253,21 @@ function renderSessionDetail(sessionId: number): string {
              if (invItem) {
                const qty = e.data.quantity_used;
                const unit = e.data.unit || invItem.unit;
-               let costStr = '';
+               
+               const baseQty = convertUnits(qty, unit, invItem.unit);
+               let cost = 0;
                if (invItem.cost_per_unit) {
-                  // convert qty to inventory base unit to calculate cost
-                  const baseQty = convertUnits(qty, unit, invItem.unit);
-                  const cost = baseQty * invItem.cost_per_unit;
+                  cost = baseQty * invItem.cost_per_unit;
                   totalCost += cost;
-                  costStr = ` (~${cost.toFixed(2)} ${invItem.currency || 'NOK'})`;
                }
-               usedItems.push(`<li><span class="font-semibold">${invItem.name}</span>: ${qty} ${unit}${costStr}</li>`);
+               
+               if (!groupedLinked.has(invItem.id)) {
+                  groupedLinked.set(invItem.id, { invItem, totalQty: baseQty, cost });
+               } else {
+                  const existing = groupedLinked.get(invItem.id)!;
+                  existing.totalQty += baseQty;
+                  existing.cost += cost;
+               }
              }
            } else {
              const inventoryOptions = DAL.getInventoryItems().map(i => `<option value="${i.id}">${i.name} (Stock: ${i.quantity_on_hand.toFixed(2)} ${i.unit})</option>`).join('');
@@ -296,6 +304,19 @@ function renderSessionDetail(sessionId: number): string {
              `;
              usedItems.push(`<li class="mb-3">${displayStr}${formHtml}</li>`);
            }
+        });
+        
+        groupedLinked.forEach((group) => {
+           const invItem = group.invItem;
+           const unit = invItem.unit;
+           let costStr = '';
+           if (invItem.cost_per_unit) {
+              costStr = ` (~${group.cost.toFixed(2)} ${invItem.currency || 'NOK'})`;
+           }
+           const displayQty = Number.isInteger(group.totalQty) ? group.totalQty : parseFloat(group.totalQty.toFixed(3));
+           // Prepend to maintain they come first, or append. Let's just append. 
+           // Better yet, unshift so they appear at top, since linked are usually main ingredients.
+           usedItems.unshift(`<li><span class="font-semibold">${invItem.name}</span>: ${displayQty} ${unit}${costStr}</li>`);
         });
         
         if (usedItems.length === 0) return '';
@@ -397,175 +418,55 @@ function renderSessionDetail(sessionId: number): string {
       </script>
       ` : ''}
       
-      <h3 class="text-xl font-bold mb-4 text-base-content">Log Event</h3>
-      <form hx-post="/sessions/${sessionId}/events" hx-target="#main-content" class="flex flex-col gap-4 mb-10 max-w-sm">
-        <div class="form-control w-full">
-          <label class="label"><span class="label-text">Event Type</span></label>
-          <select name="type" id="event-type-select" class="select select-bordered" required onchange="updateFormFields()">
-            <option value="sg_reading">SG Reading</option>
-            <option value="addition">Addition (Nutrients, etc.)</option>
-            <option value="racking">Racking</option>
-            <option value="bottling">Bottling</option>
-          </select>
-          <p id="event-description" class="text-sm text-pollen mt-2 leading-tight"></p>
-        </div>
-        <div class="form-control w-full">
-          <label class="label"><span class="label-text">Date & Time</span></label>
-          <input type="datetime-local" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
-        </div>
-        
-        <div id="standard-data-container" class="form-control w-full">
-          <label class="label"><span class="label-text" id="event-data-label">SG Value</span></label>
-          <input type="text" name="data" id="event-data-input" class="input input-bordered w-full" />
-        </div>
-
-        <div id="addition-data-container" class="hidden flex-col gap-3">
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Inventory Item</span></label>
-            <select name="inventory_item_id" id="event-inventory-select" class="select select-bordered" onchange="toggleCustomIngredient()">
-              <option value="">-- Custom / Not in Inventory --</option>
-              ${(() => {
-                 const inv = DAL.getInventoryItems();
-                 return inv.map(i => `<option value="${i.id}" data-unit="${i.unit}">${i.name} (Stock: ${i.quantity_on_hand} ${i.unit})</option>`).join('');
-              })()}
-            </select>
-          </div>
-          <div class="form-control w-full hidden" id="custom-ingredient-container">
-            <label class="label"><span class="label-text">Ingredient Name</span></label>
-            <input type="text" name="custom_ingredient" id="custom-ingredient-input" class="input input-bordered w-full" placeholder="e.g. Cinnamon Stick" />
-          </div>
-          <div class="flex gap-2">
-            <div class="form-control w-1/2">
-              <label class="label"><span class="label-text">Quantity</span></label>
-              <input type="number" step="any" name="quantity_used" id="quantity-used-input" class="input input-bordered w-full" />
-            </div>
-            <div class="form-control w-1/2">
-              <label class="label"><span class="label-text">Unit</span></label>
-              <select name="unit" id="unit-select" class="select select-bordered">
-                <option value="g">g</option>
-                <option value="kg">kg</option>
-                <option value="ml">ml</option>
-                <option value="L">L</option>
-                <option value="packets">packets</option>
-                <option value="oz">oz</option>
-                <option value="lb">lb</option>
-                <option value="tsp">tsp</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary w-fit">Log</button>
-      </form>
-      <script>
-        function toggleCustomIngredient() {
-          const select = document.getElementById('event-inventory-select');
-          const customContainer = document.getElementById('custom-ingredient-container');
-          const unitSelect = document.getElementById('unit-select');
-          if (select.value === "") {
-            customContainer.classList.remove('hidden');
-          } else {
-            customContainer.classList.add('hidden');
-            const selectedOption = select.options[select.selectedIndex];
-            if (selectedOption && selectedOption.dataset.unit) {
-               unitSelect.value = selectedOption.dataset.unit;
-            }
-          }
-        }
-      
-        function updateFormFields() {
-          const type = document.getElementById('event-type-select').value;
-          const desc = document.getElementById('event-description');
-          
-          const standardContainer = document.getElementById('standard-data-container');
-          const additionContainer = document.getElementById('addition-data-container');
-          
-          const label = document.getElementById('event-data-label');
-          const input = document.getElementById('event-data-input');
-          
-          const qtyInput = document.getElementById('quantity-used-input');
-          
-          if (type === 'addition') {
-             standardContainer.classList.add('hidden');
-             additionContainer.classList.remove('hidden');
-             additionContainer.classList.add('flex');
-             desc.innerText = "Log additions like yeast pitching, staggered nutrient additions (SNA), fruit, or spices.";
-             
-             input.required = false;
-             qtyInput.required = true;
-             toggleCustomIngredient();
-          } else {
-             additionContainer.classList.add('hidden');
-             additionContainer.classList.remove('flex');
-             standardContainer.classList.remove('hidden');
-             qtyInput.required = false;
-             
-            if (type === 'sg_reading') {
-              desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG) to calculate ABV.";
-              label.innerText = "SG Value";
-              input.type = "number";
-              input.step = "0.001";
-              input.placeholder = "e.g. 1.090";
-              input.required = true;
-            } else if (type === 'racking') {
-              desc.innerText = "Transfer off the sediment (lees) to a new vessel. Progresses the batch to the Aging stage.";
-              label.innerText = "Notes (Optional)";
-              input.type = "text";
-              input.removeAttribute("step");
-              input.placeholder = "e.g. Racked to glass carboy";
-              input.required = false;
-            } else if (type === 'bottling') {
-              desc.innerText = "Final packaging. Completes the batch and moves it to the Bottled stage.";
-              label.innerText = "Notes (Optional)";
-              input.type = "text";
-              input.removeAttribute("step");
-              input.placeholder = "e.g. Yielded 10 bottles";
-              input.required = false;
-            }
-          }
-        }
-        
-        // Initialize default date
-        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
-        document.getElementById('event-timestamp-input').value = localISOTime;
-        
-        updateFormFields();
-      </script>
-      
-      <h3 class="text-xl font-bold mb-4 text-base-content">Event History</h3>
-      <div class="overflow-x-auto pb-6">
-        <ul class="timeline">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-base-content">Event History</h3>
+        <button type="button" class="btn btn-primary btn-sm gap-1" onclick="openAddEventModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          Log Event
+        </button>
+      </div>
+      <div class="pb-6">
+        <ul class="timeline timeline-vertical grid grid-cols-[max-content_auto_1fr] gap-x-6 [&>li]:grid-cols-[max-content_auto_1fr] [&>li]:grid-cols-subgrid [&>li]:col-span-3 [&>li]:gap-x-6">
           ${fullSession.events && fullSession.events.length > 0 ? 
             [...fullSession.events].reverse().map((e, index, arr) => `
             <li>
               ${index > 0 ? '<hr/>' : ''}
-              <div class="timeline-start text-xs text-pollen mb-2 whitespace-nowrap">
+              <div class="timeline-start text-sm text-pollen whitespace-nowrap justify-self-start text-left m-0">
                 ${new Date(e.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toLowerCase()}
               </div>
               <div class="timeline-middle bg-base-100 rounded-full p-1 shadow-sm border border-base-300">
                 ${getEventIcon(e.type)}
               </div>
-              <div class="timeline-end timeline-box bg-base-100 border-base-300 mt-2 flex items-center gap-3">
-                <div class="flex flex-col">
+              <div class="timeline-end timeline-box bg-base-100 border-base-300 p-4 w-full justify-self-stretch flex items-center gap-3 shadow-md my-2 mx-0">
+                <div class="flex flex-col flex-grow min-w-0">
                   <span class="font-bold text-sm uppercase text-base-content">${e.type.replace('_', ' ')}</span>
-                  <span class="text-sm text-base-content">${(() => {
-                    if (e.type === 'sg_reading') return e.data?.sg?.toFixed(3) || '';
+                  ${(() => {
+                    if (e.type === 'sg_reading') {
+                      const sgStr = e.data?.sg !== undefined ? e.data.sg.toFixed(3) : '';
+                      const note = (e.data?.note || '').trim();
+                      return `
+                        ${sgStr ? `<div class="text-sm font-semibold text-base-content mt-0.5">${sgStr}</div>` : ''}
+                        ${note ? `<div class="text-xs text-pollen mt-0.5 leading-snug">${note}</div>` : ''}
+                      `;
+                    }
                     if (e.type === 'addition') {
                       let itemText = '';
                       if (e.data?.inventory_item_id) {
                         const invItem = DAL.getInventoryItemById(e.data.inventory_item_id);
                         if (invItem) {
-                          itemText = `${invItem.name}: ${e.data.quantity_used || ''} ${e.data.unit || invItem.unit || ''}`;
+                          itemText = `${invItem.name}${e.data.quantity_used ? `: ${e.data.quantity_used} ${e.data.unit || invItem.unit || ''}` : ''}`.trim();
                         }
                       } else if (e.data?.ingredient) {
-                        itemText = `${e.data.ingredient}: ${e.data.quantity_used || ''} ${e.data.unit || ''}`;
+                        itemText = `${e.data.ingredient}${e.data.quantity_used ? `: ${e.data.quantity_used} ${e.data.unit || ''}` : ''}`.trim();
                       }
-                      const note = e.data?.note ? ` - ${e.data.note}` : '';
-                      return itemText ? (itemText + note).trim() : (e.data?.note || '');
+                      const note = (e.data?.note || '').trim();
+                      return `
+                        ${itemText ? `<div class="text-xs text-pollen font-medium mt-0.5">${itemText}</div>` : ''}
+                        ${note ? `<div class="text-sm text-base-content mt-1 leading-snug">${note}</div>` : ''}
+                      `;
                     }
-                    return e.data?.note || '';
-                  })()}</span>
+                    return e.data?.note ? `<div class="text-sm text-base-content mt-0.5 leading-snug">${e.data.note}</div>` : '';
+                  })()}
                 </div>
                 <button class="btn btn-ghost btn-xs text-primary ml-auto" onclick='openEditEventModal(${JSON.stringify(e).replace(/'/g, "&#39;")})' title="Edit Event">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
@@ -580,25 +481,81 @@ function renderSessionDetail(sessionId: number): string {
         </ul>
       </div>
 
-      <!-- Edit Event Modal -->
-      <dialog id="edit_event_modal" class="modal">
+      <!-- Add / Edit Event Modal -->
+      <dialog id="event_modal" class="modal">
         <div class="modal-box">
-          <h3 class="font-bold text-lg mb-4">Edit Event</h3>
-          <form id="edit_event_form" hx-post="/sessions/${fullSession.id}/events/edit" hx-target="#main-content" onsubmit="document.getElementById('edit_event_modal').close()">
-            <input type="hidden" name="id" id="edit-event-id" />
-            <input type="hidden" name="type" id="edit-event-type" />
+          <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Log Event</h3>
+          <form id="event-form" hx-post="/sessions/${fullSession.id}/events" hx-target="#main-content" onsubmit="document.getElementById('event_modal').close()">
+            <input type="hidden" name="id" id="event-id" />
             
-            <div class="form-control w-full mb-3">
-              <label class="label"><span class="label-text">Date & Time</span></label>
-              <input type="datetime-local" name="timestamp" id="edit-event-timestamp" required class="input input-bordered w-full" />
+            <div class="form-control w-full mb-3" id="event-type-container">
+              <label class="label"><span class="label-text">Event Type</span></label>
+              <select name="type" id="event-type-select" class="select select-bordered w-full" required onchange="updateEventModalFields()">
+                <option value="sg_reading">SG Reading</option>
+                <option value="addition">Addition (Nutrients, etc.)</option>
+                <option value="racking">Racking</option>
+                <option value="bottling">Bottling</option>
+              </select>
+              <p id="event-description" class="text-xs text-pollen mt-1 leading-tight"></p>
             </div>
 
-            <!-- Dynamic Fields -->
-            <div id="edit-event-dynamic-fields"></div>
-            
+            <div class="form-control w-full mb-3">
+              <label class="label"><span class="label-text">Date & Time</span></label>
+              <input type="datetime-local" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
+            </div>
+
+            <!-- SG Container (for sg_reading) -->
+            <div id="sg-data-container" class="form-control w-full mb-3">
+              <label class="label"><span class="label-text">SG Value</span></label>
+              <input type="number" step="0.001" name="sg" id="event-sg-input" class="input input-bordered w-full" placeholder="e.g. 1.090" />
+            </div>
+
+            <!-- Addition Container (for addition) -->
+            <div id="addition-data-container" class="hidden flex-col gap-3 mb-3">
+              <div class="form-control w-full">
+                <label class="label"><span class="label-text">Inventory Item</span></label>
+                <select name="inventory_item_id" id="event-inventory-select" class="select select-bordered w-full" onchange="toggleCustomIngredient()">
+                  <option value="">-- Custom / Not in Inventory --</option>
+                  ${(() => {
+                     const inv = DAL.getInventoryItems();
+                     return inv.map(i => `<option value="${i.id}" data-unit="${i.unit}">${i.name} (Stock: ${i.quantity_on_hand} ${i.unit})</option>`).join('');
+                  })()}
+                </select>
+              </div>
+              <div class="form-control w-full hidden" id="custom-ingredient-container">
+                <label class="label"><span class="label-text">Ingredient Name</span></label>
+                <input type="text" name="custom_ingredient" id="custom-ingredient-input" class="input input-bordered w-full" placeholder="e.g. Cinnamon Stick" />
+              </div>
+              <div class="flex gap-2">
+                <div class="form-control w-1/2">
+                  <label class="label"><span class="label-text">Quantity</span></label>
+                  <input type="number" step="any" name="quantity_used" id="quantity-used-input" class="input input-bordered w-full" />
+                </div>
+                <div class="form-control w-1/2">
+                  <label class="label"><span class="label-text">Unit</span></label>
+                  <select name="unit" id="unit-select" class="select select-bordered w-full">
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="L">L</option>
+                    <option value="packets">packets</option>
+                    <option value="oz">oz</option>
+                    <option value="lb">lb</option>
+                    <option value="tsp">tsp</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Note Container (available for all event types) -->
+            <div id="event-note-container" class="form-control w-full mb-3">
+              <label class="label"><span class="label-text" id="event-note-label">Note (Optional)</span></label>
+              <input type="text" name="note" id="event-note-input" class="input input-bordered w-full" placeholder="e.g. Additional notes or observations" />
+            </div>
+
             <div class="modal-action">
-              <button type="button" class="btn" onclick="document.getElementById('edit_event_modal').close()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Changes</button>
+              <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Cancel</button>
+              <button type="submit" id="event-submit-btn" class="btn btn-primary">Log Event</button>
             </div>
           </form>
         </div>
@@ -628,50 +585,150 @@ function renderSessionDetail(sessionId: number): string {
       </dialog>
       
       <script>
+        function toggleCustomIngredient() {
+          const select = document.getElementById('event-inventory-select');
+          const customContainer = document.getElementById('custom-ingredient-container');
+          const unitSelect = document.getElementById('unit-select');
+          if (select.value === "") {
+            customContainer.classList.remove('hidden');
+          } else {
+            customContainer.classList.add('hidden');
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.dataset.unit) {
+               unitSelect.value = selectedOption.dataset.unit;
+            }
+          }
+        }
+
+        function updateEventModalFields() {
+          const type = document.getElementById('event-type-select').value;
+          const desc = document.getElementById('event-description');
+          
+          const sgContainer = document.getElementById('sg-data-container');
+          const sgInput = document.getElementById('event-sg-input');
+          
+          const additionContainer = document.getElementById('addition-data-container');
+          const qtyInput = document.getElementById('quantity-used-input');
+          
+          const noteLabel = document.getElementById('event-note-label');
+          const noteInput = document.getElementById('event-note-input');
+          
+          if (type === 'addition') {
+             sgContainer.classList.add('hidden');
+             sgInput.required = false;
+             
+             additionContainer.classList.remove('hidden');
+             additionContainer.classList.add('flex');
+             qtyInput.required = true;
+             toggleCustomIngredient();
+             
+             desc.innerText = "Log additions like yeast pitching, nutrients, fruit, or spices.";
+             noteLabel.innerText = "Note (Optional)";
+             noteInput.placeholder = "e.g. Staggered addition, stirred well";
+          } else if (type === 'sg_reading') {
+             additionContainer.classList.add('hidden');
+             additionContainer.classList.remove('flex');
+             qtyInput.required = false;
+             
+             sgContainer.classList.remove('hidden');
+             sgInput.required = true;
+             
+             desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG).";
+             noteLabel.innerText = "Note (Optional)";
+             noteInput.placeholder = "e.g. Activity slowing, clear must";
+          } else if (type === 'racking') {
+             sgContainer.classList.add('hidden');
+             sgInput.required = false;
+             
+             additionContainer.classList.add('hidden');
+             additionContainer.classList.remove('flex');
+             qtyInput.required = false;
+             
+             desc.innerText = "Transfer off the sediment (lees) to a new vessel. Progresses the batch to Aging.";
+             noteLabel.innerText = "Notes (Optional)";
+             noteInput.placeholder = "e.g. Racked to glass carboy, minimal headspace";
+          } else if (type === 'bottling') {
+             sgContainer.classList.add('hidden');
+             sgInput.required = false;
+             
+             additionContainer.classList.add('hidden');
+             additionContainer.classList.remove('flex');
+             qtyInput.required = false;
+             
+             desc.innerText = "Final packaging. Completes the batch and moves it to Bottled.";
+             noteLabel.innerText = "Notes (Optional)";
+             noteInput.placeholder = "e.g. Yielded 10 bottles, primed with honey";
+          }
+        }
+
+        function openAddEventModal() {
+          const modal = document.getElementById('event_modal');
+          const form = document.getElementById('event-form');
+          document.getElementById('event-modal-title').innerText = "Log Event";
+          document.getElementById('event-submit-btn').innerText = "Log Event";
+          
+          form.setAttribute('hx-post', '/sessions/${fullSession.id}/events');
+          htmx.process(form);
+          
+          document.getElementById('event-id').value = "";
+          document.getElementById('event-type-select').value = "sg_reading";
+          
+          const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+          const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
+          document.getElementById('event-timestamp-input').value = localISOTime;
+          
+          document.getElementById('event-sg-input').value = "";
+          document.getElementById('event-inventory-select').value = "";
+          document.getElementById('custom-ingredient-input').value = "";
+          document.getElementById('quantity-used-input').value = "";
+          document.getElementById('unit-select').value = "g";
+          document.getElementById('event-note-input').value = "";
+          
+          updateEventModalFields();
+          modal.showModal();
+        }
+
         function openEditEventModal(event) {
-          document.getElementById('edit-event-id').value = event.id;
-          document.getElementById('edit-event-type').value = event.type;
+          const modal = document.getElementById('event_modal');
+          const form = document.getElementById('event-form');
+          document.getElementById('event-modal-title').innerText = "Edit Event";
+          document.getElementById('event-submit-btn').innerText = "Save Changes";
+          
+          form.setAttribute('hx-post', '/sessions/${fullSession.id}/events/edit');
+          htmx.process(form);
+          
+          document.getElementById('event-id').value = event.id;
+          document.getElementById('event-type-select').value = event.type;
           
           const localTime = new Date(new Date(event.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-          document.getElementById('edit-event-timestamp').value = localTime;
+          document.getElementById('event-timestamp-input').value = localTime;
           
-          const dyn = document.getElementById('edit-event-dynamic-fields');
+          document.getElementById('event-sg-input').value = "";
+          document.getElementById('event-inventory-select').value = "";
+          document.getElementById('custom-ingredient-input').value = "";
+          document.getElementById('quantity-used-input').value = "";
+          document.getElementById('unit-select').value = "g";
+          document.getElementById('event-note-input').value = event.data?.note || '';
+          
           if (event.type === 'sg_reading') {
-            dyn.innerHTML = \`
-              <div class="form-control w-full mb-3">
-                <label class="label"><span class="label-text">SG Value</span></label>
-                <input type="number" step="0.001" name="sg" required class="input input-bordered w-full" value="\${event.data?.sg || ''}" />
-              </div>
-            \`;
-          } else if (event.type === 'racking' || event.type === 'bottling') {
-            dyn.innerHTML = \`
-              <div class="form-control w-full mb-3">
-                <label class="label"><span class="label-text">Notes</span></label>
-                <input type="text" name="note" class="input input-bordered w-full" value="\${event.data?.note || ''}" />
-              </div>
-            \`;
+            document.getElementById('event-sg-input').value = event.data?.sg !== undefined ? event.data.sg : '';
           } else if (event.type === 'addition') {
-            dyn.innerHTML = \`
-              <div class="form-control w-full mb-3">
-                <label class="label"><span class="label-text">Notes / Ingredient</span></label>
-                <input type="text" name="note" class="input input-bordered w-full" value="\${event.data?.note || event.data?.ingredient || ''}" placeholder="e.g. 4.2g Fermaid-O" />
-              </div>
-              \${event.data?.quantity_used !== undefined ? \`
-                <div class="flex gap-2 mb-3">
-                  <div class="form-control w-1/2">
-                    <label class="label"><span class="label-text">Quantity</span></label>
-                    <input type="number" step="any" name="quantity_used" class="input input-bordered w-full" value="\${event.data.quantity_used}" />
-                  </div>
-                  <div class="form-control w-1/2">
-                    <label class="label"><span class="label-text">Unit</span></label>
-                    <input type="text" name="unit" class="input input-bordered w-full" value="\${event.data.unit || ''}" />
-                  </div>
-                </div>
-              \` : ''}
-            \`;
+            if (event.data?.inventory_item_id) {
+              document.getElementById('event-inventory-select').value = event.data.inventory_item_id;
+            } else {
+              document.getElementById('event-inventory-select').value = "";
+              document.getElementById('custom-ingredient-input').value = event.data?.ingredient || '';
+            }
+            if (event.data?.quantity_used !== undefined) {
+              document.getElementById('quantity-used-input').value = event.data.quantity_used;
+            }
+            if (event.data?.unit) {
+              document.getElementById('unit-select').value = event.data.unit;
+            }
           }
           
-          document.getElementById('edit_event_modal').showModal();
+          updateEventModalFields();
+          modal.showModal();
         }
       </script>
     </div>
@@ -892,6 +949,9 @@ serve({
     }
     if (url.pathname === "/output.css") {
       return new Response(Bun.file("public/output.css"));
+    }
+    if (url.pathname === "/heidrun.jpeg") {
+      return new Response(Bun.file("public/heidrun.jpeg"));
     }
     
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
@@ -1136,16 +1196,18 @@ serve({
       
       const formData = await req.formData();
       const type = formData.get("type") as string;
-      const dataRaw = formData.get("data") as string;
       const timestampRaw = formData.get("timestamp") as string;
+      const note = ((formData.get("note") || formData.get("addition_note") || "") as string).trim();
       
       if (!isNaN(sessionId) && type) {
-        let data: any = { note: dataRaw };
+        let data: any = {};
         if (type === "sg_reading") {
-          const sg = parseFloat(dataRaw);
+          const sgStr = (formData.get("sg") || formData.get("data")) as string;
+          const sg = parseFloat(sgStr);
           if (!isNaN(sg)) {
-            data = { sg };
+            data.sg = sg;
           }
+          if (note && note !== sgStr) data.note = note;
         } else if (type === "addition") {
           const invIdStr = formData.get("inventory_item_id") as string;
           const qtyStr = formData.get("quantity_used") as string;
@@ -1155,16 +1217,21 @@ serve({
           if (invIdStr) {
             data = {
               inventory_item_id: parseInt(invIdStr),
-              quantity_used: parseFloat(qtyStr),
+              quantity_used: parseFloat(qtyStr) || 0,
               unit: unit
             };
           } else {
             data = {
               ingredient: customName,
-              quantity_used: parseFloat(qtyStr),
+              quantity_used: parseFloat(qtyStr) || 0,
               unit: unit
             };
           }
+          if (note) data.note = note;
+        } else if (type === "racking" || type === "bottling") {
+          const legacyData = ((formData.get("data") || "") as string).trim();
+          const finalNote = note || legacyData;
+          if (finalNote) data.note = finalNote;
         }
         
         let timestampToUse = undefined;
@@ -1230,6 +1297,7 @@ serve({
       const eventId = parseInt(formData.get("id") as string);
       const type = formData.get("type") as string;
       const timestampRaw = formData.get("timestamp") as string;
+      const note = ((formData.get("note") || formData.get("addition_note") || "") as string).trim();
       
       let timestampToUse = undefined;
       if (timestampRaw) {
@@ -1242,27 +1310,38 @@ serve({
       if (!isNaN(sessionId) && !isNaN(eventId) && timestampToUse && type) {
          const event = DAL.getEventById(eventId);
          if (event) {
-            const newData = { ...event.data };
+            let newData: any = {};
             if (type === 'sg_reading') {
-               const sg = parseFloat(formData.get("sg") as string);
+               const sgStr = (formData.get("sg") || formData.get("data")) as string;
+               const sg = parseFloat(sgStr);
                if (!isNaN(sg)) newData.sg = sg;
+               if (note && note !== sgStr) newData.note = note;
             } else if (type === 'racking' || type === 'bottling') {
-               newData.note = formData.get("note") as string;
+               const legacyData = ((formData.get("data") || "") as string).trim();
+               const finalNote = note || legacyData;
+               if (finalNote) newData.note = finalNote;
             } else if (type === 'addition') {
-               const note = formData.get("note") as string;
-               if (note) {
-                  newData.note = note;
-               } else {
-                  delete newData.note;
-               }
+               const invIdStr = formData.get("inventory_item_id") as string;
+               const qtyStr = formData.get("quantity_used") as string;
+               const unit = formData.get("unit") as string;
+               const customName = formData.get("custom_ingredient") as string;
                
-               if (newData.quantity_used !== undefined) {
-                  const qty = parseFloat(formData.get("quantity_used") as string);
-                  if (!isNaN(qty)) newData.quantity_used = qty;
-                  newData.unit = formData.get("unit") as string;
+               if (invIdStr) {
+                 newData = {
+                   inventory_item_id: parseInt(invIdStr),
+                   quantity_used: parseFloat(qtyStr) || 0,
+                   unit: unit
+                 };
+               } else {
+                 newData = {
+                   ingredient: customName,
+                   quantity_used: parseFloat(qtyStr) || 0,
+                   unit: unit
+                 };
                }
+               if (note) newData.note = note;
             }
-            DAL.updateEvent(eventId, newData, timestampToUse);
+            DAL.updateEvent(eventId, newData, timestampToUse, type);
          }
       }
       
