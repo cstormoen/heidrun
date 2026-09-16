@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@theme {
+  --color-honey: #E5A93C;
+  --color-rust: #B85B14;
+  --color-cream: #FAF7F2;
+  --color-charcoal: #1F1C18;
+  --color-pollen: #6B655B;
+  
+  --color-status-planned: #8A8377;
+  --color-status-primary: #F4C430;
+  --color-status-aging: #7A4A3A;
+  --color-status-bottled: #4E795B;
+}
+
+/* Base Light Theme Overrides matching the palette */
+[data-theme="light"] {
+  --color-base-100: var(--color-cream);
+  --color-base-200: #F0EBE1; /* Slightly darker cream for contrast */
+  --color-base-content: var(--color-charcoal);
+  --color-primary: var(--color-rust);
+  --color-primary-content: #ffffff;
+  --color-secondary: var(--color-honey);
+  --color-secondary-content: #1F1C18;
+  --color-neutral: var(--color-pollen);
+}
+
+/* Dark Theme Overrides mapping the palette for dark mode */
+[data-theme="dark"] {
+  --color-base-100: var(--color-charcoal);
+  --color-base-200: #151310; /* Darker charcoal */
+  --color-base-content: var(--color-cream);
+  --color-primary: var(--color-rust);
+  --color-primary-content: #ffffff;
+  --color-secondary: var(--color-honey);
+  --color-secondary-content: #1F1C18;
+  --color-neutral: var(--color-pollen);
+}

@@ -1,0 +1,22 @@
+{
+  "name": "heidrun",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/server.ts & bun x @tailwindcss/cli -i public/styles.css -o public/output.css --watch",
+    "build": "bun x @tailwindcss/cli -i public/styles.css -o public/output.css"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "daisyui": "^5.7.38",
+    "htmx.org": "^2.0.10",
+    "tailwindcss": "^4.3.3"
+  }
+}
