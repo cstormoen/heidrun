@@ -11,6 +11,7 @@ import {
 	formatQuantity,
 	formatSg,
 	formatTimelineDate,
+	formatTimelineDay,
 	formatUnitPrice,
 } from "./formatters";
 
@@ -19,6 +20,7 @@ export const TEMPLATES_DIR = path.resolve(import.meta.dir, "../../templates");
 const DEFAULT_HELPERS = {
 	formatDateForDisplay,
 	formatTimelineDate,
+	formatTimelineDay,
 	formatAge,
 	formatSg,
 	formatAbv,

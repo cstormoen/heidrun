@@ -8,6 +8,7 @@ import {
 	formatQuantity,
 	formatSg,
 	formatTimelineDate,
+	formatTimelineDay,
 	formatUnitPrice,
 } from "../formatters";
 
@@ -32,6 +33,42 @@ describe("formatters", () => {
 
 		it("returns empty string on invalid date", () => {
 			expect(formatTimelineDate("invalid")).toBe("");
+		});
+	});
+
+	describe("formatTimelineDay", () => {
+		it("returns Day 1 for first event", () => {
+			expect(
+				formatTimelineDay("2026-08-01T12:00:00Z", "2026-08-01T12:00:00Z"),
+			).toBe("Day 1");
+		});
+
+		it("returns Day 1 for same-day events", () => {
+			expect(
+				formatTimelineDay("2026-08-01T18:30:00Z", "2026-08-01T10:00:00Z"),
+			).toBe("Day 1");
+		});
+
+		it("calculates subsequent days accurately", () => {
+			expect(
+				formatTimelineDay("2026-08-02T10:00:00Z", "2026-08-01T10:00:00Z"),
+			).toBe("Day 2");
+			expect(
+				formatTimelineDay("2026-08-15T12:00:00Z", "2026-08-01T10:00:00Z"),
+			).toBe("Day 15");
+		});
+
+		it("defaults to Day 1 if startDate is not provided or event is earlier", () => {
+			expect(formatTimelineDay("2026-08-01T12:00:00Z")).toBe("Day 1");
+			expect(
+				formatTimelineDay("2026-07-30T12:00:00Z", "2026-08-01T12:00:00Z"),
+			).toBe("Day 1");
+		});
+
+		it("returns empty string on invalid or missing date", () => {
+			expect(formatTimelineDay("invalid")).toBe("");
+			expect(formatTimelineDay(null)).toBe("");
+			expect(formatTimelineDay(undefined)).toBe("");
 		});
 	});
 

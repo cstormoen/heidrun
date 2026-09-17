@@ -23,6 +23,37 @@ export function formatTimelineDate(dateStr?: string | Date | null): string {
 		.toLowerCase();
 }
 
+export function formatTimelineDay(
+	dateStr?: string | Date | null,
+	startDateStr?: string | Date | null,
+): string {
+	if (!dateStr) return "";
+	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+	if (isNaN(d.getTime())) return "";
+
+	if (!startDateStr) return "Day 1";
+	const start =
+		typeof startDateStr === "string" ? new Date(startDateStr) : startDateStr;
+	if (isNaN(start.getTime())) return "Day 1";
+
+	const startDay = new Date(
+		start.getFullYear(),
+		start.getMonth(),
+		start.getDate(),
+	);
+	const currentDay = new Date(
+		d.getFullYear(),
+		d.getMonth(),
+		d.getDate(),
+	);
+	const diffDays = Math.round(
+		(currentDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24),
+	);
+	const dayNumber = Math.max(1, diffDays + 1);
+
+	return `Day ${dayNumber}`;
+}
+
 export function formatAge(ageMs: number): string {
 	if (ageMs <= 0) return "0 hours";
 
