@@ -119,13 +119,46 @@ export interface Recipe {
 }
 
 /**
- * Calculates ABV from Original Gravity and Final/Current Gravity
+ * Calculates alcohol percentage using the Alternate ABV Formula:
+ * ABV = ((76.08 * (OG - FG)) / (1.775 - OG)) * (FG / 0.794)
+ *
+ * Optimized for high sugar density, changed fluid viscosity, and ethanol concentration in mead.
  */
 export function calculateABV(og: number, fg: number): number {
+  if (isNaN(og) || isNaN(fg)) return 0;
   const normOg = og > 2 ? og / 1000 : og;
   const normFg = fg > 2 ? fg / 1000 : fg;
-  return (normOg - normFg) * 131.25;
+
+  if (normOg <= normFg || 1.775 - normOg === 0) {
+    return 0;
+  }
+
+  const abv = ((76.08 * (normOg - normFg)) / (1.775 - normOg)) * (normFg / 0.794);
+  return Math.max(0, abv);
 }
+
+/**
+ * Calculates Fermentation Progress (%) based on gravity drop relative to target Final Gravity:
+ * Progress % = ((OG - Current SG) / (OG - Target FG)) * 100
+ */
+export function calculateFermentationProgress(
+  og: number,
+  currentSg: number,
+  targetFg: number = 1.000
+): number {
+  if (isNaN(og) || isNaN(currentSg) || isNaN(targetFg)) return 0;
+  const normOg = og > 2 ? og / 1000 : og;
+  const normCurrent = currentSg > 2 ? currentSg / 1000 : currentSg;
+  const normTargetFg = targetFg > 2 ? targetFg / 1000 : targetFg;
+
+  const totalExpectedDrop = normOg - normTargetFg;
+  if (totalExpectedDrop <= 0) return 0;
+
+  const actualDrop = normOg - normCurrent;
+  const progress = (actualDrop / totalExpectedDrop) * 100;
+  return Math.max(0, Number(progress.toFixed(1)));
+}
+
 
 import { formatAge, formatDateForDisplay } from "../views/formatters";
 export { formatAge, formatDateForDisplay };
@@ -426,8 +459,10 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
   }
 
   let abv = 0;
+  let progress: number | undefined = undefined;
   if (og !== undefined && currentSg !== undefined) {
     abv = calculateABV(og, currentSg);
+    progress = calculateFermentationProgress(og, currentSg);
   }
 
   let ageMs = 0;
@@ -448,6 +483,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
     original_sg: og,
     current_sg: currentSg,
     abv: Number(abv.toFixed(2)),
+    progress,
     age_days: Math.floor(ageMs / (1000 * 60 * 60 * 24)),
     age_formatted: formatAge(ageMs),
     start_date: firstEventDateStr

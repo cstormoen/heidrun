@@ -23,12 +23,7 @@
   <div class="flex flex-wrap items-center gap-2 mb-6">
     <span class="badge <%= getBadgeClasses(session.status) %>"><%= session.status === 'Aging' ? 'Aging (Modning)' : session.status %></span>
     <% if (session.is_chemically_stabilized) { %>
-      <span class="badge badge-success text-white gap-1" id="badge-chemically-stabilized">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-        </svg>
-        Chemically Stabilized
-      </span>
+      <span class="badge bg-apothecary-teal text-white border-apothecary-teal" id="badge-chemically-stabilized">Chemically Stabilized</span>
     <% } %>
     <% if (session.is_gravity_stable) { %>
       <span class="badge badge-info text-white gap-1" title="Primary fermentation complete (identical SG readings over 7+ days)">
@@ -59,8 +54,6 @@
       <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
     </div>
   </div>
-
-  <%- include('../partials/ingredientsUsed', { usage: inventoryUsage, inventoryList: inventoryList, sessionId: session.id }) %>
 
   <% if (chartBundle && chartBundle.sgData && chartBundle.sgData.length > 0) { %>
     <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
@@ -147,12 +140,12 @@
   <% } %>
 
   <!-- Backsweetening Guidance Card -->
-  <div class="card bg-base-100 border <%= session.is_chemically_stabilized ? 'border-primary/40 shadow-sm' : 'border-warning/40 bg-warning/5 shadow-sm' %> mb-8" id="backsweetening-guidance-card">
+  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="backsweetening-guidance-card">
     <div class="card-body p-5">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 class="card-title text-base-content text-lg flex items-center gap-2">
           <% if (session.is_chemically_stabilized) { %>
-            <span class="text-xl">🍯</span> Backsweetening Guidance (Ettersøting)
+            Backsweetening Guidance
           <% } else { %>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
@@ -160,13 +153,7 @@
             Backsweetening Guidance (Locked)
           <% } %>
         </h3>
-        <% if (session.is_chemically_stabilized) { %>
-          <% if (session.backsweetening_events && session.backsweetening_events.length > 0) { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Backsweetened</span>
-          <% } else { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Unlocked &amp; Safe</span>
-          <% } %>
-        <% } else { %>
+        <% if (!session.is_chemically_stabilized) { %>
           <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Stabilization Required</span>
         <% } %>
       </div>
@@ -192,7 +179,7 @@
                   <% } %>
                   <div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-base-300/60 text-xs">
                     <% if (b.measured_sg_delta !== undefined) { %>
-                      <span class="badge badge-sm badge-success text-white font-medium">
+                      <span class="font-medium">
                         Measured SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %> 
                         (<%= b.measured_sg_delta >= 0 ? '+' : '' %><%= b.measured_sg_delta.toFixed(3) %> SG)
                       </span>
@@ -338,6 +325,8 @@
       <% } %>
     </ul>
   </div>
+
+  <%- include('../partials/ingredientsUsed', { usage: inventoryUsage, inventoryList: inventoryList, sessionId: session.id }) %>
 
   <!-- Add / Edit Event Modal -->
   <dialog id="event_modal" class="modal">

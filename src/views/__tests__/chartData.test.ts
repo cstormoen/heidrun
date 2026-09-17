@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { Event } from "../../domain/models";
+import { calculateABV, type Event } from "../../domain/models";
 import { buildFermentationChartData, normalizeSg } from "../chartData";
 
 describe("chartData", () => {
@@ -58,8 +58,8 @@ describe("chartData", () => {
 			expect(result.sgData[1]).toEqual({ x: 4, y: 1.05 });
 
 			expect(result.abvData.length).toBe(2);
-			expect(result.abvData[0].y).toBe(0); // (1.110 - 1.110) * 131.25 = 0
-			expect(result.abvData[1].y).toBeCloseTo((1.11 - 1.05) * 131.25, 2);
+			expect(result.abvData[0].y).toBe(0);
+			expect(result.abvData[1].y).toBeCloseTo(Number(calculateABV(1.11, 1.05).toFixed(2)), 2);
 
 			expect(result.annotations.length).toBe(2);
 			expect(result.annotations[0].label.content).toBe("Addition");

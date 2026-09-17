@@ -133,7 +133,12 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Fermentation Curve");
 		expect(detailHtml).toContain("Fermaid O");
 		expect(detailHtml).toContain("Event History");
+		expect(detailHtml).toContain("Ingredients Used");
 		expect(detailHtml).toContain("Log Event");
+		// Ingredients Used should be rendered below Event History
+		expect(detailHtml.indexOf("Ingredients Used")).toBeGreaterThan(
+			detailHtml.indexOf("Event History"),
+		);
 		// Not stabilized by default, should render locked guidance
 		expect(detailHtml).toContain("Backsweetening Guidance (Locked)");
 		expect(detailHtml).toContain("Stabilization Required");
@@ -177,5 +182,41 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Backsweetening Guidance (Ettersøting)");
 		expect(detailHtml).toContain("Unlocked &amp; Safe");
 		expect(detailHtml).toContain("Log Backsweetening");
+	});
+
+	it("does not render Backsweetened badge when backsweetening events are present", () => {
+		const stabilizedAndBacksweetenedEvents: Event[] = [
+			...mockEvents,
+			{
+				id: 201,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-20T12:00:00.000Z",
+				data: {
+					ingredient: "Campden and Potassium Sorbate",
+					quantity_used: 2,
+					unit: "g",
+				},
+			},
+			{
+				id: 202,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-22T12:00:00.000Z",
+				data: {
+					ingredient: "Honey",
+					quantity_used: 500,
+					unit: "g",
+				},
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			stabilizedAndBacksweetenedEvents,
+			mockInventory,
+		);
+		expect(detailHtml).toContain("Backsweetening Guidance (Ettersøting)");
+		expect(detailHtml).not.toContain("Backsweetened");
 	});
 });

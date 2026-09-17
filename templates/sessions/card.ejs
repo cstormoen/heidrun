@@ -10,12 +10,7 @@
     <div class="flex gap-2 mb-2 items-center flex-wrap">
       <span class="badge <%= badgeClasses %>"><%= statusLabel %></span>
       <% if (session.is_chemically_stabilized) { %>
-        <span class="badge badge-success text-white badge-sm gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-          </svg>
-          Chemically Stabilized
-        </span>
+        <span class="badge bg-apothecary-teal text-white border-apothecary-teal badge-sm">Chemically Stabilized</span>
       <% } %>
       <% if (startDateStr) { %>
         <div class="text-sm text-pollen grid group" title="Click or hover to toggle">

@@ -1,4 +1,4 @@
-import type { Event } from "../domain/models";
+import { calculateABV, type Event } from "../domain/models";
 import {
 	DEFAULT_ANNOTATION_COLOR,
 	EVENT_ANNOTATION_CONFIG,
@@ -41,7 +41,7 @@ export function buildFermentationChartData(
 				sg = normalizeSg(sg);
 				if (og === null) og = sg;
 				sgData.push({ x: day, y: sg });
-				const abv = (og - sg) * 131.25;
+				const abv = calculateABV(og, sg);
 				abvData.push({ x: day, y: Number(abv.toFixed(2)) });
 			}
 		} else {
