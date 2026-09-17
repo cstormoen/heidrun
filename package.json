@@ -9,13 +9,15 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/ejs": "^3.1.5"
   },
   "peerDependencies": {
     "typescript": "^7"
   },
   "dependencies": {
     "daisyui": "^5.7.38",
+    "ejs": "^6.0.1",
     "htmx.org": "^2.0.10",
     "tailwindcss": "^4.3.3"
   }

@@ -1,0 +1,32 @@
+<div>
+  <h2 class="text-3xl font-bold mb-6 text-base-content">Start New Batch</h2>
+  <form hx-post="/sessions" hx-target="#main-content" hx-push-url="/" class="flex flex-col gap-4">
+    <div class="form-control w-full max-w-sm">
+      <label class="label"><span class="label-text">Batch Name</span></label>
+      <input type="text" name="name" placeholder="e.g. Summer Melomel" required class="input input-bordered w-full max-w-sm" />
+    </div>
+    <div class="form-control w-full max-w-sm">
+      <label class="label"><span class="label-text">Recipe / Foundation</span></label>
+      <select name="recipe_id" id="recipe-select" class="select select-bordered" required onchange="updateRecipeDesc()">
+        <% recipes.forEach(function(r) { %>
+          <option value="<%= r.id %>" data-desc="<%- r.safeDescription %>"><%= r.name %></option>
+        <% }); %>
+      </select>
+      <p id="recipe-desc" class="text-sm text-pollen mt-2 leading-tight"></p>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button type="submit" class="btn btn-primary">Start Session</button>
+      <button type="button" class="btn btn-ghost" hx-get="/" hx-target="#main-content" hx-push-url="true">Cancel</button>
+    </div>
+  </form>
+  <script>
+    function updateRecipeDesc() {
+      const select = document.getElementById('recipe-select');
+      if (select && select.options.length > 0) {
+        const desc = select.options[select.selectedIndex].getAttribute('data-desc');
+        document.getElementById('recipe-desc').innerHTML = desc || '';
+      }
+    }
+    updateRecipeDesc();
+  </script>
+</div>

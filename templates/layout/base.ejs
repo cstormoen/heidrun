@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= locals.pageTitle || 'Heidrun' %></title>
+  <script src="/htmx.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <link href="/output.css" rel="stylesheet">
+  <script>
+    // Init theme
+    const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    function toggleTheme() {
+      const html = document.documentElement;
+      const newTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+  </script>
+</head>
+<body class="bg-base-200 text-base-content min-h-screen">
+  <div class="navbar bg-base-100 shadow-sm mb-4">
+    <div class="flex-1 flex items-center gap-2 px-2">
+      <img src="/heidrun.jpeg" alt="Logo" class="w-12 h-12 rounded-full" />
+      <a class="btn btn-ghost normal-case text-xl" href="/" hx-get="/" hx-target="#main-content" hx-push-url="true">Heidrun</a>
+      <a class="btn btn-ghost normal-case" href="/pantry" hx-get="/pantry" hx-target="#main-content" hx-push-url="true">Pantry</a>
+    </div>
+    <div class="flex-none">
+      <button class="btn btn-square btn-ghost" onclick="toggleTheme()" title="Toggle Dark Mode">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <main class="container mx-auto px-4 max-w-2xl" id="main-content" hx-history-elt>
+    <%- body %>
+  </main>
+</body>
+</html>

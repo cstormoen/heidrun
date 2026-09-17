@@ -1,0 +1,42 @@
+<% 
+  const badgeClasses = getBadgeClasses(session.status);
+  const statusLabel = session.status === "Aging" ? "Aging (Modning)" : (session.status || "Planned");
+  const startDateStr = formatDateForDisplay(session.start_date);
+  const sgDisplay = formatSg(session.current_sg);
+%>
+<div class="card bg-base-100 shadow-sm mb-4 transition-all duration-300 cursor-pointer border border-base-300 hover:border-primary hover:shadow-md hover:-translate-y-1" hx-get="/sessions/<%= session.id %>" hx-target="#main-content" hx-push-url="true">
+  <div class="card-body">
+    <h2 class="card-title text-base-content"><%= session.name %></h2>
+    <div class="flex gap-2 mb-2 items-center flex-wrap">
+      <span class="badge <%= badgeClasses %>"><%= statusLabel %></span>
+      <% if (session.is_chemically_stabilized) { %>
+        <span class="badge badge-success text-white badge-sm gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          Chemically Stabilized
+        </span>
+      <% } %>
+      <% if (startDateStr) { %>
+        <div class="text-sm text-pollen grid group" title="Click or hover to toggle">
+          <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Age: <%= session.age_formatted %></span>
+          <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-active:opacity-100"><%= startDateStr %></span>
+        </div>
+      <% } else { %>
+        <div class="text-sm text-pollen">
+          <span>Age: <%= session.age_formatted %></span>
+        </div>
+      <% } %>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-2">
+      <div>
+        <div class="text-xs text-pollen">Current SG</div>
+        <div class="font-semibold text-secondary"><%= sgDisplay %></div>
+      </div>
+      <div>
+        <div class="text-xs text-pollen">Calculated ABV</div>
+        <div class="font-semibold text-secondary"><%= session.abv %>%</div>
+      </div>
+    </div>
+  </div>
+</div>

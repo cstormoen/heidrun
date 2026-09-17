@@ -84,6 +84,9 @@ export interface Session {
   events?: Event[];
   // Derived fields
   status?: Status;
+  is_gravity_stable?: boolean;
+  is_chemically_stabilized?: boolean;
+  backsweetening_events?: BacksweeteningEvent[];
   current_sg?: number;
   original_sg?: number;
   abv?: number;
@@ -91,6 +94,20 @@ export interface Session {
   age_days?: number;
   age_formatted?: string;
   start_date?: string;
+}
+
+export interface BacksweeteningEvent {
+  id: number;
+  timestamp: string;
+  date_formatted: string;
+  ingredient: string;
+  quantity_used?: number;
+  unit?: string;
+  note?: string;
+  measured_sg_before?: number;
+  measured_sg_after?: number;
+  measured_sg_delta?: number;
+  estimated_sg_delta?: number;
 }
 
 export interface Recipe {
@@ -110,47 +127,262 @@ export function calculateABV(og: number, fg: number): number {
   return (normOg - normFg) * 131.25;
 }
 
-export function formatAge(ageMs: number): string {
-  if (ageMs <= 0) return "0 hours";
+import { formatAge, formatDateForDisplay } from "../views/formatters";
+export { formatAge, formatDateForDisplay };
 
-  const MS_IN_HOUR = 1000 * 60 * 60;
-  const MS_IN_DAY = MS_IN_HOUR * 24;
-  const MS_IN_MONTH = MS_IN_DAY * 30.44; 
-  const MS_IN_YEAR = MS_IN_DAY * 365.25;
+// 7 days in milliseconds required to confirm gravity stability
+export const GRAVITY_STABILITY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-  const years = Math.floor(ageMs / MS_IN_YEAR);
-  const months = Math.floor((ageMs % MS_IN_YEAR) / MS_IN_MONTH);
-  const days = Math.floor((ageMs % MS_IN_MONTH) / MS_IN_DAY);
-  const hours = Math.floor((ageMs % MS_IN_DAY) / MS_IN_HOUR);
+/**
+ * Checks if gravity has remained stable over at least 7 days (two identical SG readings)
+ */
+export function checkGravityStability(events: Event[]): boolean {
+  const sgEvents = events
+    .filter(e => e.type === 'sg_reading' && e.data?.sg !== undefined)
+    .map(e => {
+      let sg = e.data.sg;
+      if (sg > 2) sg = sg / 1000;
+      return {
+        sg: Number(sg.toFixed(3)),
+        time: new Date(e.timestamp).getTime(),
+      };
+    })
+    .sort((a, b) => a.time - b.time);
 
-  const parts = [];
+  if (sgEvents.length < 2) return false;
 
-  if (years > 0) {
-    parts.push(`${years} year${years !== 1 ? 's' : ''}`);
-    if (months > 0) {
-      parts.push(`${months} month${months !== 1 ? 's' : ''}`);
+  for (let i = 0; i < sgEvents.length; i++) {
+    for (let j = i + 1; j < sgEvents.length; j++) {
+      const timeDiff = sgEvents[j].time - sgEvents[i].time;
+      if (timeDiff >= GRAVITY_STABILITY_WINDOW_MS) {
+        if (sgEvents[i].sg === sgEvents[j].sg) {
+          let allIntermediateMatch = true;
+          for (let k = i + 1; k < j; k++) {
+            if (sgEvents[k].sg !== sgEvents[i].sg) {
+              allIntermediateMatch = false;
+              break;
+            }
+          }
+          if (allIntermediateMatch) {
+            return true;
+          }
+        }
+      }
     }
-  } else if (months > 0) {
-    parts.push(`${months} month${months !== 1 ? 's' : ''}`);
-    if (days > 0) {
-      parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-    }
-  } else if (days > 0) {
-    parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-    if (hours > 0) {
-      parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-    }
-  } else {
-    parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
   }
-
-  return parts.join(', ');
+  return false;
 }
 
 /**
- * Derives the current state of a session based on its events
+ * Checks if both stabilizer ingredients (sulfite + sorbate) have been logged via addition events
  */
-export function deriveSessionState(session: Session, events: Event[]): Session {
+export function checkChemicalStabilization(events: Event[], inventoryList?: InventoryItem[]): boolean {
+  const invMap = new Map<number, InventoryItem>();
+  if (inventoryList) {
+    for (const item of inventoryList) {
+      invMap.set(item.id, item);
+    }
+  }
+
+  let hasSulfite = false;
+  let hasSorbate = false;
+
+  const additionEvents = events.filter(e => e.type === 'addition');
+
+  const isSulfiteText = (text: string) => 
+    /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i.test(text);
+
+  const isSorbateText = (text: string) => 
+    /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i.test(text);
+
+  for (const e of additionEvents) {
+    let combinedText = '';
+    if (e.data?.inventory_item_id && invMap.has(e.data.inventory_item_id)) {
+      combinedText += ' ' + invMap.get(e.data.inventory_item_id)!.name;
+    }
+    if (e.data?.ingredient) {
+      combinedText += ' ' + e.data.ingredient;
+    }
+    if (e.data?.note) {
+      combinedText += ' ' + e.data.note;
+    }
+
+    if (isSulfiteText(combinedText)) {
+      hasSulfite = true;
+    }
+    if (isSorbateText(combinedText)) {
+      hasSorbate = true;
+    }
+  }
+
+  return hasSulfite && hasSorbate;
+}
+
+/**
+ * Finds backsweetening addition events logged after chemical stabilization and calculates measured & estimated SG changes
+ */
+export function getBacksweeteningEvents(
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  og?: number,
+): BacksweeteningEvent[] {
+  const invMap = new Map<number, InventoryItem>();
+  if (inventoryList) {
+    for (const item of inventoryList) {
+      invMap.set(item.id, item);
+    }
+  }
+
+  const isSulfiteText = (text: string) =>
+    /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i.test(text);
+
+  const isSorbateText = (text: string) =>
+    /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i.test(text);
+
+  let lastSulfiteTime: number | null = null;
+  let lastSorbateTime: number | null = null;
+
+  for (const e of events) {
+    if (e.type !== "addition") continue;
+    let combinedText = "";
+    if (e.data?.inventory_item_id && invMap.has(e.data.inventory_item_id)) {
+      combinedText += " " + invMap.get(e.data.inventory_item_id)!.name;
+    }
+    if (e.data?.ingredient) {
+      combinedText += " " + e.data.ingredient;
+    }
+    if (e.data?.note) {
+      combinedText += " " + e.data.note;
+    }
+
+    const t = new Date(e.timestamp).getTime();
+    if (isSulfiteText(combinedText)) {
+      if (lastSulfiteTime === null || t > lastSulfiteTime) lastSulfiteTime = t;
+    }
+    if (isSorbateText(combinedText)) {
+      if (lastSorbateTime === null || t > lastSorbateTime) lastSorbateTime = t;
+    }
+  }
+
+  if (lastSulfiteTime === null || lastSorbateTime === null) {
+    return [];
+  }
+
+  const stabilizationTime = Math.max(lastSulfiteTime, lastSorbateTime);
+
+  // Approximate initial batch volume in Liters based on honey added vs target OG
+  let initialSugarGrams = 0;
+  for (const e of events) {
+    if (e.type !== "addition") continue;
+    const t = new Date(e.timestamp).getTime();
+    if (t < stabilizationTime) {
+      const invItem = e.data?.inventory_item_id ? invMap.get(e.data.inventory_item_id) : undefined;
+      const isSugar =
+        invItem?.category === "Honey & Sugars" ||
+        /honning|honey|sugar|sukker/i.test(invItem?.name || e.data?.ingredient || "");
+      if (isSugar && e.data?.quantity_used) {
+        initialSugarGrams += convertUnits(e.data.quantity_used, e.data.unit || invItem?.unit || "g", "g");
+      }
+    }
+  }
+
+  let batchVolumeLiters = 10.0;
+  if (og && og > 1.01 && initialSugarGrams > 0) {
+    const ogPoints = (og - 1) * 1000;
+    const calculatedVol = (initialSugarGrams / 1000 * 300) / ogPoints;
+    if (calculatedVol >= 2 && calculatedVol <= 60) {
+      batchVolumeLiters = calculatedVol;
+    }
+  }
+
+  // Sorted SG readings
+  const sgReadings = events
+    .filter((e) => e.type === "sg_reading" && e.data?.sg !== undefined)
+    .map((e) => {
+      let sg = e.data.sg;
+      if (sg > 2) sg = sg / 1000;
+      return {
+        sg: Number(sg.toFixed(3)),
+        time: new Date(e.timestamp).getTime(),
+      };
+    })
+    .sort((a, b) => a.time - b.time);
+
+  const backsweeteningAdditions: BacksweeteningEvent[] = [];
+
+  for (const e of events) {
+    if (e.type !== "addition") continue;
+    const t = new Date(e.timestamp).getTime();
+    if (t < stabilizationTime) continue;
+
+    const invItem = e.data?.inventory_item_id ? invMap.get(e.data.inventory_item_id) : undefined;
+    let combinedText = "";
+    if (invItem) combinedText += " " + invItem.name;
+    if (e.data?.ingredient) combinedText += " " + e.data.ingredient;
+    if (e.data?.note) combinedText += " " + e.data.note;
+
+    if (isSulfiteText(combinedText) || isSorbateText(combinedText)) continue;
+
+    const isSweetener =
+      invItem?.category === "Honey & Sugars" ||
+      /honning|honey|sugar|sukker|sirup|syrup|ettersøt|backsweeten|sweet|søt/i.test(combinedText);
+
+    if (!isSweetener) continue;
+
+    // Find latest SG reading before this addition
+    let sgBefore: number | undefined = undefined;
+    for (let i = sgReadings.length - 1; i >= 0; i--) {
+      if (sgReadings[i].time <= t) {
+        sgBefore = sgReadings[i].sg;
+        break;
+      }
+    }
+
+    // Find earliest SG reading after this addition
+    let sgAfter: number | undefined = undefined;
+    for (let i = 0; i < sgReadings.length; i++) {
+      if (sgReadings[i].time > t) {
+        sgAfter = sgReadings[i].sg;
+        break;
+      }
+    }
+
+    let measuredDelta: number | undefined = undefined;
+    if (sgBefore !== undefined && sgAfter !== undefined) {
+      measuredDelta = Number((sgAfter - sgBefore).toFixed(3));
+    }
+
+    let estimatedDelta: number | undefined = undefined;
+    if (e.data?.quantity_used) {
+      const grams = convertUnits(e.data.quantity_used, e.data.unit || invItem?.unit || "g", "g");
+      const est = grams / (batchVolumeLiters * 3500);
+      estimatedDelta = Number(est.toFixed(3));
+    }
+
+    const ingredientName = invItem?.name || e.data?.ingredient || "Sweetener";
+
+    backsweeteningAdditions.push({
+      id: e.id,
+      timestamp: e.timestamp,
+      date_formatted: formatDateForDisplay(e.timestamp),
+      ingredient: ingredientName,
+      quantity_used: e.data?.quantity_used,
+      unit: e.data?.unit || invItem?.unit,
+      note: e.data?.note,
+      measured_sg_before: sgBefore,
+      measured_sg_after: sgAfter,
+      measured_sg_delta: measuredDelta,
+      estimated_sg_delta: estimatedDelta,
+    });
+  }
+
+  return backsweeteningAdditions;
+}
+
+/**
+ * Derives the current state of a session based on its events and inventory items
+ */
+export function deriveSessionState(session: Session, events: Event[], inventoryList?: InventoryItem[]): Session {
   let status: Status = 'Planned';
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
@@ -182,6 +414,17 @@ export function deriveSessionState(session: Session, events: Event[]): Session {
     }
   }
 
+  const isGravityStable = checkGravityStability(sortedEvents);
+  const isChemicallyStabilized = checkChemicalStabilization(sortedEvents, inventoryList);
+  const backsweeteningEvents = isChemicallyStabilized
+    ? getBacksweeteningEvents(sortedEvents, inventoryList, og)
+    : [];
+
+  // If gravity has stabilized over the required window and batch isn't bottled, primary is finished -> transition to Aging
+  if (isGravityStable && status !== 'Bottled') {
+    status = 'Aging';
+  }
+
   let abv = 0;
   if (og !== undefined && currentSg !== undefined) {
     abv = calculateABV(og, currentSg);
@@ -199,6 +442,9 @@ export function deriveSessionState(session: Session, events: Event[]): Session {
     ...session,
     events,
     status,
+    is_gravity_stable: isGravityStable,
+    is_chemically_stabilized: isChemicallyStabilized,
+    backsweetening_events: backsweeteningEvents,
     original_sg: og,
     current_sg: currentSg,
     abv: Number(abv.toFixed(2)),

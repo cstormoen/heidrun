@@ -1,0 +1,65 @@
+<% 
+  const hasLinked = usage && usage.linkedGroups && usage.linkedGroups.length > 0;
+  const hasUnlinked = usage && usage.unlinkedItems && usage.unlinkedItems.length > 0;
+%>
+<% if (hasLinked || hasUnlinked) { %>
+  <div class="card bg-base-100 border border-base-300 shadow-sm mb-6">
+    <div class="card-body p-4">
+      <h3 class="card-title text-base-content text-lg mb-2">Ingredients Used</h3>
+      <ul class="list-disc list-inside text-sm text-base-content mb-2">
+        <% if (hasLinked) { %>
+          <% usage.linkedGroups.forEach(function(group) { %>
+            <li>
+              <span class="font-semibold"><%= group.invItem.name %></span>: 
+              <%= formatQuantity(group.totalQty) %> <%= group.invItem.unit %>
+              <% if (group.invItem.cost_per_unit) { %>
+                (~<%= group.cost.toFixed(2) %> <%= group.invItem.currency || 'NOK' %>)
+              <% } %>
+            </li>
+          <% }); %>
+        <% } %>
+
+        <% if (hasUnlinked) { %>
+          <% usage.unlinkedItems.forEach(function(item) { %>
+            <% const e = item.event; %>
+            <li class="mb-3">
+              <% if (e.data && e.data.ingredient) { %>
+                <span class="font-semibold"><%= e.data.ingredient %></span>: <%= e.data.quantity_used || "" %> <%= e.data.unit || "" %>
+                <% if (e.data.note) { %> - <%= e.data.note %><% } %>
+              <% } else if (e.data && e.data.note) { %>
+                <%= e.data.note %>
+              <% } else { %>
+                Unknown Addition
+              <% } %>
+              
+              <form hx-post="/sessions/<%= sessionId %>/events/<%= e.id %>/link" hx-target="#main-content" class="mt-1 flex flex-wrap items-center gap-1 p-2 bg-base-200 rounded-md border border-base-300 w-fit">
+                <span class="text-xs font-semibold mr-1">Link item:</span>
+                <select name="inventory_item_id" class="select select-bordered select-xs w-32" required>
+                  <option value="" disabled selected>Select...</option>
+                  <% inventoryList.forEach(function(inv) { %>
+                    <option value="<%= inv.id %>"><%= inv.name %> (Stock: <%= inv.quantity_on_hand.toFixed(2) %> <%= inv.unit %>)</option>
+                  <% }); %>
+                </select>
+                <input type="number" step="any" name="quantity" class="input input-bordered input-xs w-16" placeholder="Qty" required value="<%= (e.data && e.data.quantity_used) || '' %>" />
+                <select name="unit" class="select select-bordered select-xs w-20" required>
+                  <option value="g" <%= (e.data && e.data.unit === 'g') ? 'selected' : '' %>>g</option>
+                  <option value="kg" <%= (e.data && e.data.unit === 'kg') ? 'selected' : '' %>>kg</option>
+                  <option value="ml" <%= (e.data && e.data.unit === 'ml') ? 'selected' : '' %>>ml</option>
+                  <option value="L" <%= (e.data && e.data.unit === 'L') ? 'selected' : '' %>>L</option>
+                  <option value="packets" <%= (e.data && e.data.unit === 'packets') ? 'selected' : '' %>>packets</option>
+                  <option value="oz" <%= (e.data && e.data.unit === 'oz') ? 'selected' : '' %>>oz</option>
+                  <option value="lb" <%= (e.data && e.data.unit === 'lb') ? 'selected' : '' %>>lb</option>
+                  <option value="tsp" <%= (e.data && e.data.unit === 'tsp') ? 'selected' : '' %>>tsp</option>
+                </select>
+                <button type="submit" class="btn btn-xs btn-primary">Link</button>
+              </form>
+            </li>
+          <% }); %>
+        <% } %>
+      </ul>
+      <% if (usage.totalCost > 0) { %>
+        <div class="text-sm font-bold text-secondary mt-2 border-t border-base-200 pt-2">Estimated Batch Cost: <%= usage.totalCost.toFixed(2) %> NOK</div>
+      <% } %>
+    </div>
+  </div>
+<% } %>

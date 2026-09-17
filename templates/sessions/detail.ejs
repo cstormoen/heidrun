@@ -1,0 +1,621 @@
+<div>
+  <div class="flex items-center justify-between mb-2">
+    <button class="btn btn-sm btn-ghost text-pollen" hx-get="/" hx-target="#main-content" hx-push-url="true">&larr; Back</button>
+    <% if (startDateFormatted) { %>
+      <div class="text-sm text-pollen grid group cursor-default" title="Click or hover to toggle age">
+        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Age: <%= session.age_formatted %></span>
+        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-active:opacity-100">Started: <%= startDateFormatted %></span>
+      </div>
+    <% } else { %>
+      <div class="text-sm text-pollen">Age: <%= session.age_formatted %></div>
+    <% } %>
+  </div>
+
+  <div class="flex justify-between items-center mb-2 mt-2">
+    <h2 class="text-3xl font-bold text-base-content flex items-center gap-2">
+      <%= session.name %>
+      <button class="btn btn-ghost btn-sm text-pollen" onclick="document.getElementById('edit_session_name_modal').showModal()" title="Edit Batch Name">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+      </button>
+    </h2>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 mb-6">
+    <span class="badge <%= getBadgeClasses(session.status) %>"><%= session.status === 'Aging' ? 'Aging (Modning)' : session.status %></span>
+    <% if (session.is_chemically_stabilized) { %>
+      <span class="badge badge-success text-white gap-1" id="badge-chemically-stabilized">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        Chemically Stabilized
+      </span>
+    <% } %>
+    <% if (session.is_gravity_stable) { %>
+      <span class="badge badge-info text-white gap-1" title="Primary fermentation complete (identical SG readings over 7+ days)">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+        </svg>
+        Gravity Stable
+      </span>
+    <% } %>
+  </div>
+
+  <div class="stats shadow w-full mb-6 flex-wrap bg-base-100 border border-base-300">
+    <div class="stat place-items-center">
+      <div class="stat-title text-pollen">Original Gravity</div>
+      <div class="stat-value text-2xl text-secondary"><%= ogFormatted %></div>
+    </div>
+    <div class="stat place-items-center">
+      <div class="stat-title text-pollen">Current SG</div>
+      <div class="stat-value text-2xl text-secondary flex items-center gap-2">
+        <%= currentSgFormatted %>
+        <% if (session.current_sg && session.original_sg && session.current_sg < session.original_sg) { %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+        <% } %>
+      </div>
+    </div>
+    <div class="stat place-items-center">
+      <div class="stat-title text-pollen">Calculated ABV</div>
+      <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
+    </div>
+  </div>
+
+  <%- include('../partials/ingredientsUsed', { usage: inventoryUsage, inventoryList: inventoryList, sessionId: session.id }) %>
+
+  <% if (chartBundle && chartBundle.sgData && chartBundle.sgData.length > 0) { %>
+    <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
+      <div class="card-body p-4">
+        <h3 class="card-title text-base-content text-lg mb-2">Fermentation Curve</h3>
+        <div class="w-full relative" style="height: 300px;">
+          <canvas id="fermentationChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <script>
+      setTimeout(() => {
+        const ctx = document.getElementById('fermentationChart');
+        if (!ctx) return;
+        
+        const data = <%- chartConfigJSON %>;
+        
+        if (window.fermentationChartInstance) {
+          window.fermentationChartInstance.destroy();
+        }
+        
+        window.fermentationChartInstance = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: 'Specific Gravity',
+                data: data.sgData,
+                borderColor: '#E5A93C',
+                backgroundColor: '#E5A93C',
+                yAxisID: 'ySG',
+                showLine: true,
+                tension: 0.2,
+                borderWidth: 3
+              },
+              {
+                label: 'ABV (%)',
+                data: data.abvData,
+                borderColor: '#4E795B',
+                backgroundColor: '#4E795B',
+                borderDash: [5, 5],
+                yAxisID: 'yABV',
+                showLine: true,
+                tension: 0.2,
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'linear',
+                title: { display: true, text: 'Days in Fermentation' }
+              },
+              ySG: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'Specific Gravity' },
+                ticks: {
+                  callback: function(value) { return value.toFixed(3); }
+                }
+              },
+              yABV: {
+                type: 'linear',
+                position: 'right',
+                title: { display: true, text: 'ABV %' },
+                grid: { drawOnChartArea: false },
+                ticks: {
+                  callback: function(value) { return value.toFixed(1) + '%'; }
+                }
+              }
+            },
+            plugins: {
+              annotation: {
+                annotations: data.annotations
+              }
+            }
+          }
+        });
+      }, 10);
+    </script>
+  <% } %>
+
+  <!-- Backsweetening Guidance Card -->
+  <div class="card bg-base-100 border <%= session.is_chemically_stabilized ? 'border-primary/40 shadow-sm' : 'border-warning/40 bg-warning/5 shadow-sm' %> mb-8" id="backsweetening-guidance-card">
+    <div class="card-body p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h3 class="card-title text-base-content text-lg flex items-center gap-2">
+          <% if (session.is_chemically_stabilized) { %>
+            <span class="text-xl">🍯</span> Backsweetening Guidance (Ettersøting)
+          <% } else { %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+            Backsweetening Guidance (Locked)
+          <% } %>
+        </h3>
+        <% if (session.is_chemically_stabilized) { %>
+          <% if (session.backsweetening_events && session.backsweetening_events.length > 0) { %>
+            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Backsweetened</span>
+          <% } else { %>
+            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Unlocked &amp; Safe</span>
+          <% } %>
+        <% } else { %>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Stabilization Required</span>
+        <% } %>
+      </div>
+
+      <% if (session.is_chemically_stabilized) { %>
+        <% if (session.backsweetening_events && session.backsweetening_events.length > 0) { %>
+          <div class="mb-4">
+            <div class="text-xs font-semibold uppercase tracking-wider text-pollen mb-2">Logged Backsweetening Events</div>
+            <div class="space-y-2">
+              <% session.backsweetening_events.forEach(function(b) { %>
+                <div class="bg-base-200/70 border border-base-300 rounded-lg p-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="font-semibold text-base-content text-sm">
+                      <%= b.ingredient %>
+                      <% if (b.quantity_used) { %>
+                        <span class="text-secondary font-bold">(<%= formatQuantity(b.quantity_used) %> <%= b.unit || '' %>)</span>
+                      <% } %>
+                    </div>
+                    <div class="text-xs text-pollen"><%= b.date_formatted %></div>
+                  </div>
+                  <% if (b.note) { %>
+                    <div class="text-xs text-base-content/80 mt-1 italic">"<%= b.note %>"</div>
+                  <% } %>
+                  <div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-base-300/60 text-xs">
+                    <% if (b.measured_sg_delta !== undefined) { %>
+                      <span class="badge badge-sm badge-success text-white font-medium">
+                        Measured SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %> 
+                        (<%= b.measured_sg_delta >= 0 ? '+' : '' %><%= b.measured_sg_delta.toFixed(3) %> SG)
+                      </span>
+                    <% } else if (b.measured_sg_before !== undefined) { %>
+                      <span class="badge badge-sm badge-ghost text-pollen">
+                        Pre-sweetening SG: <%= b.measured_sg_before.toFixed(3) %> (Awaiting post-sweetening reading)
+                      </span>
+                    <% } %>
+                    <% if (b.estimated_sg_delta !== undefined) { %>
+                      <span class="text-pollen font-medium">
+                        Approx. SG Increase: <strong class="text-secondary">+<%= b.estimated_sg_delta.toFixed(3) %></strong>
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% } else { %>
+          <p class="text-sm text-base-content mb-3 leading-relaxed">
+            Batch is <strong>chemically stabilized</strong> with both Potassium Metabisulfite (Campden) and Potassium Sorbate (Sorbistat). Yeast reproduction is safely inhibited, preventing renewed fermentation or bottle bombs when sugars are added.
+          </p>
+        <% } %>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-center">
+          <div class="bg-base-200/60 rounded-lg p-2">
+            <div class="text-xs text-pollen">Dry</div>
+            <div class="text-sm font-bold text-secondary">&lt; 1.006</div>
+          </div>
+          <div class="bg-base-200/60 rounded-lg p-2">
+            <div class="text-xs text-pollen">Semi-Sweet</div>
+            <div class="text-sm font-bold text-secondary">1.006 – 1.015</div>
+          </div>
+          <div class="bg-base-200/60 rounded-lg p-2">
+            <div class="text-xs text-pollen">Sweet</div>
+            <div class="text-sm font-bold text-secondary">1.015 – 1.025</div>
+          </div>
+          <div class="bg-base-200/60 rounded-lg p-2">
+            <div class="text-xs text-pollen">Dessert</div>
+            <div class="text-sm font-bold text-secondary">&gt; 1.025</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div class="text-xs text-pollen leading-snug">
+            💡 <strong>Dosage tip:</strong> Adding ~35 g honey per 1 L of must increases specific gravity by approximately +0.010.
+          </div>
+          <button type="button" class="btn btn-sm btn-primary gap-1" onclick="openBacksweetenModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            <%= (session.backsweetening_events && session.backsweetening_events.length > 0) ? 'Add More Sweetener' : 'Log Backsweetening' %>
+          </button>
+        </div>
+      <% } else { %>
+        <p class="text-sm text-base-content mb-2 leading-relaxed">
+          <strong>Chemical stabilization is required before backsweetening.</strong> Adding honey or sugars without stabilizers will likely restart fermentation with active or dormant yeast, risking uncontrolled ABV and dangerous <strong>bottle bombs</strong>.
+        </p>
+        <p class="text-xs text-pollen mb-3 leading-relaxed">
+          To safely unlock backsweetening guidance, log an Addition Event containing stabilizer ingredients: <strong>Campden (Potassium Metabisulfite)</strong> + <strong>Sorbistat (Potassium Sorbate)</strong>.
+        </p>
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-warning/20">
+          <div class="text-xs">
+            <% if (session.is_gravity_stable) { %>
+              <span class="text-success font-medium flex items-center gap-1">
+                ✓ Gravity is stable over 7+ days. Log stabilizers to proceed with sweetening.
+              </span>
+            <% } else { %>
+              <span class="text-pollen flex items-center gap-1">
+                ⏳ Gravity stability not confirmed (needs 2 identical SG readings 7+ days apart).
+              </span>
+            <% } %>
+          </div>
+          <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openStabilizerModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Log Stabilizer Addition
+          </button>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-xl font-bold text-base-content">Event History</h3>
+    <button type="button" class="btn btn-primary btn-sm gap-1" onclick="openAddEventModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+      Log Event
+    </button>
+  </div>
+  <div class="pb-6">
+    <ul class="timeline timeline-vertical grid grid-cols-[max-content_auto_1fr] gap-x-6 [&>li]:grid-cols-[max-content_auto_1fr] [&>li]:grid-cols-subgrid [&>li]:col-span-3 [&>li]:gap-x-6">
+      <% if (session.events && session.events.length > 0) { %>
+        <% 
+          const reversedEvents = [...session.events].reverse();
+          const invMap = new Map(inventoryList.map(function(i) { return [i.id, i]; }));
+        %>
+        <% reversedEvents.forEach(function(e, index, arr) { %>
+          <li>
+            <% if (index > 0) { %><hr/><% } %>
+            <div class="timeline-start text-sm text-pollen whitespace-nowrap justify-self-start text-left m-0">
+              <%= formatTimelineDate(e.timestamp) %>
+            </div>
+            <div class="timeline-middle bg-base-100 rounded-full p-1 shadow-sm border border-base-300">
+              <%- getEventIcon(e.type) %>
+            </div>
+            <div class="timeline-end timeline-box bg-base-100 border-base-300 p-4 w-full justify-self-stretch flex items-center gap-3 shadow-md my-2 mx-0">
+              <div class="flex flex-col flex-grow min-w-0">
+                <span class="font-bold text-sm uppercase text-base-content"><%= e.type.replace("_", " ") %></span>
+                <% if (e.type === "sg_reading") { %>
+                  <% const sgStr = e.data && e.data.sg !== undefined ? e.data.sg.toFixed(3) : ""; %>
+                  <% const note = (e.data && e.data.note || "").trim(); %>
+                  <% if (sgStr) { %><div class="text-sm font-semibold text-base-content mt-0.5"><%= sgStr %></div><% } %>
+                  <% if (note) { %><div class="text-xs text-pollen mt-0.5 leading-snug"><%= note %></div><% } %>
+                <% } else if (e.type === "addition") { %>
+                  <% 
+                    let itemText = "";
+                    if (e.data && e.data.inventory_item_id) {
+                      const invItem = invMap.get(e.data.inventory_item_id);
+                      if (invItem) {
+                        itemText = (invItem.name + (e.data.quantity_used ? ": " + e.data.quantity_used + " " + (e.data.unit || invItem.unit || "") : "")).trim();
+                      }
+                    } else if (e.data && e.data.ingredient) {
+                      itemText = (e.data.ingredient + (e.data.quantity_used ? ": " + e.data.quantity_used + " " + (e.data.unit || "") : "")).trim();
+                    }
+                    const note = (e.data && e.data.note || "").trim();
+                  %>
+                  <% if (itemText) { %><div class="text-xs text-pollen font-medium mt-0.5"><%= itemText %></div><% } %>
+                  <% if (note) { %><div class="text-sm text-base-content mt-1 leading-snug"><%= note %></div><% } %>
+                <% } else if (e.data && e.data.note) { %>
+                  <div class="text-sm text-base-content mt-0.5 leading-snug"><%= e.data.note %></div>
+                <% } %>
+              </div>
+              <button class="btn btn-ghost btn-xs text-primary ml-auto" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Edit Event">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+              </button>
+              <button class="btn btn-ghost btn-xs text-error ml-1" hx-delete="/sessions/<%= session.id %>/events/<%= e.id %>" hx-target="#main-content" hx-confirm="Are you sure you want to delete this event?" title="Delete Event">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+              </button>
+            </div>
+            <% if (index < arr.length - 1) { %><hr/><% } %>
+          </li>
+        <% }); %>
+      <% } else { %>
+        <div class="text-pollen">No events logged yet.</div>
+      <% } %>
+    </ul>
+  </div>
+
+  <!-- Add / Edit Event Modal -->
+  <dialog id="event_modal" class="modal">
+    <div class="modal-box">
+      <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Log Event</h3>
+      <form id="event-form" hx-post="/sessions/<%= session.id %>/events" hx-target="#main-content" onsubmit="document.getElementById('event_modal').close()">
+        <input type="hidden" name="id" id="event-id" />
+        
+        <div class="form-control w-full mb-3" id="event-type-container">
+          <label class="label"><span class="label-text">Event Type</span></label>
+          <select name="type" id="event-type-select" class="select select-bordered w-full" required onchange="updateEventModalFields()">
+            <option value="sg_reading">SG Reading</option>
+            <option value="addition">Addition (Nutrients, etc.)</option>
+            <option value="racking">Racking</option>
+            <option value="bottling">Bottling</option>
+          </select>
+          <p id="event-description" class="text-xs text-pollen mt-1 leading-tight"></p>
+        </div>
+
+        <div class="form-control w-full mb-3">
+          <label class="label"><span class="label-text">Date & Time</span></label>
+          <input type="datetime-local" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
+        </div>
+
+        <!-- SG Container (for sg_reading) -->
+        <div id="sg-data-container" class="form-control w-full mb-3">
+          <label class="label"><span class="label-text">SG Value</span></label>
+          <input type="number" step="0.001" name="sg" id="event-sg-input" class="input input-bordered w-full" placeholder="e.g. 1.090" />
+        </div>
+
+        <!-- Addition Container (for addition) -->
+        <div id="addition-data-container" class="hidden flex-col gap-3 mb-3">
+          <div class="form-control w-full">
+            <label class="label"><span class="label-text">Inventory Item</span></label>
+            <select name="inventory_item_id" id="event-inventory-select" class="select select-bordered w-full" onchange="toggleCustomIngredient()">
+              <option value="">-- Custom / Not in Inventory --</option>
+              <% inventoryList.forEach(function(i) { %>
+                <option value="<%= i.id %>" data-unit="<%= i.unit %>"><%= i.name %> (Stock: <%= i.quantity_on_hand %> <%= i.unit %>)</option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="form-control w-full hidden" id="custom-ingredient-container">
+            <label class="label"><span class="label-text">Ingredient Name</span></label>
+            <input type="text" name="custom_ingredient" id="custom-ingredient-input" class="input input-bordered w-full" placeholder="e.g. Cinnamon Stick" />
+          </div>
+          <div class="flex gap-2">
+            <div class="form-control w-1/2">
+              <label class="label"><span class="label-text">Quantity</span></label>
+              <input type="number" step="any" name="quantity_used" id="quantity-used-input" class="input input-bordered w-full" />
+            </div>
+            <div class="form-control w-1/2">
+              <label class="label"><span class="label-text">Unit</span></label>
+              <select name="unit" id="unit-select" class="select select-bordered w-full">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="ml">ml</option>
+                <option value="L">L</option>
+                <option value="packets">packets</option>
+                <option value="oz">oz</option>
+                <option value="lb">lb</option>
+                <option value="tsp">tsp</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Note Container (available for all event types) -->
+        <div id="event-note-container" class="form-control w-full mb-3">
+          <label class="label"><span class="label-text" id="event-note-label">Note (Optional)</span></label>
+          <input type="text" name="note" id="event-note-input" class="input input-bordered w-full" placeholder="e.g. Additional notes or observations" />
+        </div>
+
+        <div class="modal-action">
+          <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Cancel</button>
+          <button type="submit" id="event-submit-btn" class="btn btn-primary">Log Event</button>
+        </div>
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+
+  <!-- Edit Session Name Modal -->
+  <dialog id="edit_session_name_modal" class="modal">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg mb-4">Edit Batch Name</h3>
+      <form hx-post="/sessions/<%= session.id %>/name" hx-target="#main-content" onsubmit="document.getElementById('edit_session_name_modal').close()">
+        <div class="form-control w-full mb-3">
+          <label class="label"><span class="label-text">Name</span></label>
+          <input type="text" name="name" required class="input input-bordered w-full" value="<%= session.name %>" />
+        </div>
+        <div class="modal-action">
+          <button type="button" class="btn" onclick="document.getElementById('edit_session_name_modal').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+  
+  <script>
+    function toggleCustomIngredient() {
+      const select = document.getElementById('event-inventory-select');
+      const customContainer = document.getElementById('custom-ingredient-container');
+      const unitSelect = document.getElementById('unit-select');
+      if (select.value === "") {
+        customContainer.classList.remove('hidden');
+      } else {
+        customContainer.classList.add('hidden');
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption && selectedOption.dataset.unit) {
+           unitSelect.value = selectedOption.dataset.unit;
+        }
+      }
+    }
+
+    function updateEventModalFields() {
+      const type = document.getElementById('event-type-select').value;
+      const desc = document.getElementById('event-description');
+      
+      const sgContainer = document.getElementById('sg-data-container');
+      const sgInput = document.getElementById('event-sg-input');
+      
+      const additionContainer = document.getElementById('addition-data-container');
+      const qtyInput = document.getElementById('quantity-used-input');
+      
+      const noteLabel = document.getElementById('event-note-label');
+      const noteInput = document.getElementById('event-note-input');
+      
+      if (type === 'addition') {
+         sgContainer.classList.add('hidden');
+         sgInput.required = false;
+         
+         additionContainer.classList.remove('hidden');
+         additionContainer.classList.add('flex');
+         qtyInput.required = true;
+         toggleCustomIngredient();
+         
+         desc.innerText = "Log additions like yeast pitching, nutrients, fruit, or spices.";
+         noteLabel.innerText = "Note (Optional)";
+         noteInput.placeholder = "e.g. Staggered addition, stirred well";
+      } else if (type === 'sg_reading') {
+         additionContainer.classList.add('hidden');
+         additionContainer.classList.remove('flex');
+         qtyInput.required = false;
+         
+         sgContainer.classList.remove('hidden');
+         sgInput.required = true;
+         
+         desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG).";
+         noteLabel.innerText = "Note (Optional)";
+         noteInput.placeholder = "e.g. Activity slowing, clear must";
+      } else if (type === 'racking') {
+         sgContainer.classList.add('hidden');
+         sgInput.required = false;
+         
+         additionContainer.classList.add('hidden');
+         additionContainer.classList.remove('flex');
+         qtyInput.required = false;
+         
+         desc.innerText = "Transfer off the sediment (lees) to a new vessel. Progresses the batch to Aging.";
+         noteLabel.innerText = "Notes (Optional)";
+         noteInput.placeholder = "e.g. Racked to glass carboy, minimal headspace";
+      } else if (type === 'bottling') {
+         sgContainer.classList.add('hidden');
+         sgInput.required = false;
+         
+         additionContainer.classList.add('hidden');
+         additionContainer.classList.remove('flex');
+         qtyInput.required = false;
+         
+         desc.innerText = "Final packaging. Completes the batch and moves it to Bottled.";
+         noteLabel.innerText = "Notes (Optional)";
+         noteInput.placeholder = "e.g. Yielded 10 bottles, primed with honey";
+      }
+    }
+
+    function openAddEventModal() {
+      const modal = document.getElementById('event_modal');
+      const form = document.getElementById('event-form');
+      document.getElementById('event-modal-title').innerText = "Log Event";
+      document.getElementById('event-submit-btn').innerText = "Log Event";
+      
+      form.setAttribute('hx-post', '/sessions/<%= session.id %>/events');
+      htmx.process(form);
+      
+      document.getElementById('event-id').value = "";
+      document.getElementById('event-type-select').value = "sg_reading";
+      
+      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
+      document.getElementById('event-timestamp-input').value = localISOTime;
+      
+      document.getElementById('event-sg-input').value = "";
+      document.getElementById('event-inventory-select').value = "";
+      document.getElementById('custom-ingredient-input').value = "";
+      document.getElementById('quantity-used-input').value = "";
+      document.getElementById('unit-select').value = "g";
+      document.getElementById('event-note-input').value = "";
+      
+      updateEventModalFields();
+      modal.showModal();
+    }
+
+    function openEditEventModal(event) {
+      const modal = document.getElementById('event_modal');
+      const form = document.getElementById('event-form');
+      document.getElementById('event-modal-title').innerText = "Edit Event";
+      document.getElementById('event-submit-btn').innerText = "Save Changes";
+      
+      form.setAttribute('hx-post', '/sessions/<%= session.id %>/events/edit');
+      htmx.process(form);
+      
+      document.getElementById('event-id').value = event.id;
+      document.getElementById('event-type-select').value = event.type;
+      
+      const localTime = new Date(new Date(event.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('event-timestamp-input').value = localTime;
+      
+      document.getElementById('event-sg-input').value = "";
+      document.getElementById('event-inventory-select').value = "";
+      document.getElementById('custom-ingredient-input').value = "";
+      document.getElementById('quantity-used-input').value = "";
+      document.getElementById('unit-select').value = "g";
+      document.getElementById('event-note-input').value = event.data?.note || '';
+      
+      if (event.type === 'sg_reading') {
+        document.getElementById('event-sg-input').value = event.data?.sg !== undefined ? event.data.sg : '';
+      } else if (event.type === 'addition') {
+        if (event.data?.inventory_item_id) {
+          document.getElementById('event-inventory-select').value = event.data.inventory_item_id;
+        } else {
+          document.getElementById('event-inventory-select').value = "";
+          document.getElementById('custom-ingredient-input').value = event.data?.ingredient || '';
+        }
+        if (event.data?.quantity_used !== undefined) {
+          document.getElementById('quantity-used-input').value = event.data.quantity_used;
+        }
+        if (event.data?.unit) {
+          document.getElementById('unit-select').value = event.data.unit;
+        }
+      }
+      
+      updateEventModalFields();
+      modal.showModal();
+    }
+
+    function openStabilizerModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/campden|metabisulfite|sorbistat|sorbate/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          break;
+        }
+      }
+      document.getElementById('event-note-input').value = 'Kjemisk stabilisering (Stabilizer)';
+    }
+
+    function openBacksweetenModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/honning|honey|sugar|sukker/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          break;
+        }
+      }
+      document.getElementById('event-note-input').value = 'Ettersøting (Backsweetening)';
+    }
+  </script>
+</div>
