@@ -28,16 +28,16 @@ export function convertUnits(amount: number, fromUnit: string, toUnit: string): 
 
   // Convert to base unit
   switch (from) {
-    case 'kg': amountInBase = amount * 1000; isMass = true; break;
-    case 'g': amountInBase = amount; isMass = true; break;
-    case 'mg': amountInBase = amount / 1000; isMass = true; break;
-    case 'oz': amountInBase = amount * 28.3495; isMass = true; break;
-    case 'lb': amountInBase = amount * 453.592; isMass = true; break;
-    case 'l': amountInBase = amount * 1000; isVolume = true; break;
-    case 'ml': amountInBase = amount; isVolume = true; break;
-    case 'tsp': amountInBase = amount * 4.92892; isVolume = true; break;
-    case 'tbsp': amountInBase = amount * 14.7868; isVolume = true; break;
-    case 'fl oz': amountInBase = amount * 29.5735; isVolume = true; break;
+    case 'kg': amountInBase = amount * 1000; break;
+    case 'g': amountInBase = amount;   break;
+    case 'mg': amountInBase = amount / 1000;   break;
+    case 'oz': amountInBase = amount * 28.3495;   break;
+    case 'lb': amountInBase = amount * 453.592;   break;
+    case 'l': amountInBase = amount * 1000;  break;
+    case 'ml': amountInBase = amount;  break;
+    case 'tsp': amountInBase = amount * 4.92892; break;
+    case 'tbsp': amountInBase = amount * 14.7868; break;
+    case 'fl oz': amountInBase = amount * 29.5735; break;
     case 'packets':
     case 'packet':
     case 'pkt':
