@@ -119,3 +119,19 @@ export function renderSessionDetail(
 	const viewModel = getSessionDetailViewModel(session, events, inventoryList);
 	return renderView("sessions/detail", viewModel, isHtmx);
 }
+
+/**
+ * Renders the next steps partial snippet.
+ */
+export function renderNextSteps(
+	session: Session,
+	currentSgFormatted: string,
+	sugarBreakFormatted: string,
+): string {
+	return renderTemplate("partials/nextSteps", {
+		session,
+		currentSgFormatted,
+		sugarBreakFormatted,
+	});
+}
+

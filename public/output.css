@@ -5558,6 +5558,16 @@
       --alert-border-color: var(--color-error);
       --alert-color: var(--color-error);
     }
+    .alert-info {
+      color: var(--color-info-content);
+      --alert-border-color: var(--color-info);
+      --alert-color: var(--color-info);
+    }
+    .alert-warning {
+      color: var(--color-warning-content);
+      --alert-border-color: var(--color-warning);
+      --alert-color: var(--color-warning);
+    }
   }
   .text-base-content {
     color: var(--color-base-content);

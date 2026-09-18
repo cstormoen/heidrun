@@ -1,0 +1,91 @@
+<div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="next-steps-card">
+  <div class="card-body p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <h3 class="card-title text-base-content text-lg flex items-center gap-2">
+        Next Steps
+      </h3>
+      <% if (session.status === 'Primary Fermentation') { %>
+        <% if (session.is_sugar_break_reached) { %>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Past 1/3 Sugar Break</span>
+        <% } else { %>
+          <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Degassing &amp; Aeration Phase</span>
+        <% } %>
+      <% } %>
+    </div>
+
+    <% if (session.status === 'Primary Fermentation') { %>
+      <% if (!session.is_sugar_break_reached) { %>
+        <!-- Pre-1/3 Break: Actionable Next Step Alert -->
+        <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <span class="text-xl leading-none">💡</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Current SG is <%= currentSgFormatted %>. Remember to degas CO₂ and add your final nutrient dose before SG reaches <%= sugarBreakFormatted %>.
+              <span style="display: none;">Current SG is <%= currentSgFormatted %>. Remember to degas CO₂ and add your final nutrient dose before SG reaches <%= sugarBreakFormatted %>.</span>
+            </div>
+            <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
+              Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂. During the first 3 to 5 days of primary fermentation, accumulated dissolved CO₂ is toxic to yeast and can cause foam-over ("volcano") explosions when dry additives are introduced.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">1.</span>
+            <span><strong>Daily Degas &amp; Aerate:</strong> Degas and aerate the batch daily before reaching this break (<%= sugarBreakFormatted %>). Oxygen is essential right now for healthy yeast cell growth and biomass building.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">2.</span>
+            <span><strong>Swirl Before Additions:</strong> Swirl gently before adding staggered nutrients (SNA) or measuring SG to release dissolved gas and avoid violent foaming.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">3.</span>
+            <span><strong>Approaching 1/3 Sugar Break (<%= sugarBreakFormatted %>):</strong> Monitor gravity. Aeration must stop completely as soon as SG reaches <%= sugarBreakFormatted %> to prevent oxidation during aging.</span>
+          </div>
+        </div>
+      <% } else { %>
+        <!-- Post-1/3 Break: Actionable Next Step Alert -->
+        <div class="alert alert-warning bg-warning/15 border border-warning/30 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              1/3 Sugar Break reached (<%= sugarBreakFormatted %>)! Stop aerating and keep the vessel sealed under an airlock.
+            </div>
+            <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
+              Past 1/3 Sugar Break (<%= sugarBreakFormatted %>): Stop Aerating! Stop aerating once past the 1/3 break to prevent oxidation during aging. Yeast has completed its aerobic growth phase. Any oxygen introduced now will not benefit the yeast and will oxidize delicate honey aromatics into cardboard or stale notes.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-warning font-bold">1.</span>
+            <span><strong>Airlock Sealed:</strong> Keep the carboy firmly under airlock with minimal headspace. Avoid splashing or whipping air into the must.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-warning font-bold">2.</span>
+            <span><strong>Gentle Swirling Only:</strong> If adding remaining nutrients, swirl very gently under airlock to release CO₂ without admitting air.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-warning font-bold">3.</span>
+            <span><strong>Wait for Gravity Stability:</strong> Let fermentation run until completion. Look for two identical SG readings 7+ days apart to confirm primary fermentation is complete.</span>
+          </div>
+        </div>
+      <% } %>
+    <% } else if (session.status === 'Planned') { %>
+      <p class="text-sm text-base-content leading-relaxed">
+        Pitch yeast and record your first Specific Gravity reading to establish the Original Gravity (OG). Daily degassing and aeration begins once fermentation takes off.
+      </p>
+    <% } else if (session.status === 'Aging') { %>
+      <p class="text-sm text-base-content leading-relaxed">
+        Batch is aging (modning). Keep vessel topped up and airlock intact to prevent oxidation.
+      </p>
+    <% } else if (session.status === 'Bottled') { %>
+      <p class="text-sm text-base-content leading-relaxed">
+        Batch is bottled! Store in a cool, dark place to mature.
+      </p>
+    <% } %>
+  </div>
+</div>

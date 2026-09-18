@@ -5,6 +5,7 @@ import {
 	getSessionDetailViewModel,
 	getSessionListViewModel,
 	renderNewSessionForm,
+	renderNextSteps,
 	renderSessionCard,
 	renderSessionDetail,
 	renderSessionList,
@@ -216,6 +217,9 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Next Steps");
 		expect(detailHtml).toContain("1/3 Sugar Break");
 		expect(detailHtml).toContain("1.073");
+		expect(detailHtml).toContain(
+			"Current SG is 1.090. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.",
+		);
 		expect(detailHtml).toContain("Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.");
 		expect(detailHtml).toContain("Degas and aerate the batch daily before reaching this break");
 		expect(detailHtml).toContain("Degassing &amp; Aeration Phase");
@@ -246,8 +250,70 @@ describe("sessionView module", () => {
 		);
 
 		expect(detailHtml).toContain("Next Steps");
+		expect(detailHtml).toContain(
+			"1/3 Sugar Break reached (1.073)! Stop aerating and keep the vessel sealed under an airlock.",
+		);
 		expect(detailHtml).toContain("Past 1/3 Sugar Break (1.073): Stop Aerating!");
 		expect(detailHtml).toContain("Stop aerating once past the 1/3 break to prevent oxidation during aging");
 		expect(detailHtml).toContain("Past 1/3 Sugar Break");
+	});
+
+	it("renders actionable Next Step alert with contextual gravity values matching specification", () => {
+		// Scenario 1: Before break with current SG 1.085 and target break 1.073 (OG 1.110)
+		const scenario1Events: Event[] = [
+			{
+				id: 501,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.110 },
+			},
+			{
+				id: 502,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-03T12:00:00.000Z",
+				data: { sg: 1.085 },
+			},
+		];
+		const html1 = renderSessionDetail(mockSession, scenario1Events, mockInventory);
+		expect(html1).toContain(
+			"Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.",
+		);
+
+		// Scenario 2: After break with break at 1.070 (OG 1.105)
+		const scenario2Events: Event[] = [
+			{
+				id: 601,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.105 },
+			},
+			{
+				id: 602,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-05T12:00:00.000Z",
+				data: { sg: 1.065 },
+			},
+		];
+		const html2 = renderSessionDetail(mockSession, scenario2Events, mockInventory);
+		expect(html2).toContain(
+			"1/3 Sugar Break reached (1.070)! Stop aerating and keep the vessel sealed under an airlock.",
+		);
+	});
+
+	it("renders Next Steps partial directly using renderNextSteps", () => {
+		const sessionInPrimary: Session = {
+			...mockSession,
+			status: "Primary Fermentation",
+			is_sugar_break_reached: false,
+		};
+		const html = renderNextSteps(sessionInPrimary, "1.085", "1.073");
+		expect(html).toContain("id=\"next-steps-card\"");
+		expect(html).toContain("Next Steps");
+		expect(html).toContain("Degassing &amp; Aeration Phase");
+		expect(html).toContain("Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.");
 	});
 });
