@@ -7,18 +7,23 @@ export interface ChartPoint {
 
 export interface ChartAnnotation {
 	type: "line";
-	xMin: number;
-	xMax: number;
+	scaleID?: string;
+	value?: number;
+	endValue?: number;
+	xMin?: number;
+	xMax?: number;
+	yMin?: number;
+	yMax?: number;
 	borderColor: string;
 	borderWidth: number;
 	borderDash: number[];
 	label: {
 		display: boolean;
 		content: string;
-		position: "start";
+		position: string;
 		backgroundColor: string;
 		color: string;
-		font: { size: number };
+		font: { size: number; weight?: string };
 	};
 }
 
@@ -88,6 +93,7 @@ export interface SessionDetailViewModel {
 	startDateFormatted?: string;
 	ogFormatted: string;
 	currentSgFormatted: string;
+	sugarBreakFormatted?: string;
 	chartBundle: ChartDatasetBundle;
 	chartConfigJSON: string;
 	inventoryUsage: InventoryUsageSummary;

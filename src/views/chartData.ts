@@ -12,6 +12,7 @@ export function normalizeSg(sg: number): number {
 export function buildFermentationChartData(
 	events: Event[],
 	startDate?: string,
+	sugarBreakSg?: number,
 ): ChartDatasetBundle {
 	const sgData: ChartPoint[] = [];
 	const abvData: ChartPoint[] = [];
@@ -67,6 +68,28 @@ export function buildFermentationChartData(
 				},
 			});
 		}
+	}
+
+	if (sugarBreakSg !== undefined && sugarBreakSg > 0) {
+		const normBreak = normalizeSg(sugarBreakSg);
+		annotations.push({
+			type: "line",
+			scaleID: "ySG",
+			value: normBreak,
+			yMin: normBreak,
+			yMax: normBreak,
+			borderColor: "#D97706",
+			borderWidth: 2,
+			borderDash: [6, 4],
+			label: {
+				display: true,
+				content: `1/3 Sugar Break (${normBreak.toFixed(3)})`,
+				position: "end",
+				backgroundColor: "#D97706",
+				color: "white",
+				font: { size: 10, weight: "bold" },
+			},
+		});
 	}
 
 	return { sgData, abvData, annotations };

@@ -67,5 +67,29 @@ describe("chartData", () => {
 			expect(result.annotations[1].label.content).toBe("Bottled");
 			expect(result.annotations[1].xMin).toBe(9);
 		});
+
+		it("adds horizontal 1/3 sugar break annotation line when sugarBreakSg is provided", () => {
+			const startDate = "2026-09-01T10:00:00Z";
+			const events: Event[] = [
+				{
+					id: 1,
+					session_id: 10,
+					type: "sg_reading",
+					timestamp: "2026-09-01T10:00:00Z",
+					data: { sg: 1.110 },
+				},
+			];
+
+			const result = buildFermentationChartData(events, startDate, 1.073);
+			const breakAnnotation = result.annotations.find(
+				(a) => a.scaleID === "ySG",
+			);
+			expect(breakAnnotation).toBeDefined();
+			expect(breakAnnotation?.value).toBe(1.073);
+			expect(breakAnnotation?.yMin).toBe(1.073);
+			expect(breakAnnotation?.yMax).toBe(1.073);
+			expect(breakAnnotation?.label.content).toBe("1/3 Sugar Break (1.073)");
+			expect(breakAnnotation?.borderDash).toEqual([6, 4]);
+		});
 	});
 });
