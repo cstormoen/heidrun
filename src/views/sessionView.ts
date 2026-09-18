@@ -47,10 +47,12 @@ export function getSessionDetailViewModel(
 	const startDateFormatted = formatDateForDisplay(fullSession.start_date);
 	const ogFormatted = formatSg(fullSession.original_sg);
 	const currentSgFormatted = formatSg(fullSession.current_sg);
+	const sugarBreakFormatted = formatSg(fullSession.sugar_break_sg);
 
 	const chartBundle = buildFermentationChartData(
 		events,
 		fullSession.start_date,
+		fullSession.sugar_break_sg,
 	);
 	const chartConfigJSON = JSON.stringify(chartBundle);
 
@@ -67,6 +69,7 @@ export function getSessionDetailViewModel(
 		startDateFormatted,
 		ogFormatted,
 		currentSgFormatted,
+		sugarBreakFormatted,
 		chartBundle,
 		chartConfigJSON,
 		inventoryUsage,
