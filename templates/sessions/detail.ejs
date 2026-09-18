@@ -50,8 +50,113 @@
       </div>
     </div>
     <div class="stat place-items-center">
+      <div class="stat-title text-pollen">1/3 Sugar Break</div>
+      <div class="stat-value text-2xl text-secondary"><%= sugarBreakFormatted %></div>
+      <% if (session.original_sg) { %>
+        <div class="stat-desc text-xs <%= session.is_sugar_break_reached ? 'text-warning font-semibold' : 'text-pollen' %>">
+          <%= session.is_sugar_break_reached ? 'Break reached' : 'Target threshold' %>
+        </div>
+      <% } %>
+    </div>
+    <div class="stat place-items-center">
       <div class="stat-title text-pollen">Calculated ABV</div>
       <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
+    </div>
+  </div>
+
+  <!-- Next Steps Card -->
+  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="next-steps-card">
+    <div class="card-body p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h3 class="card-title text-base-content text-lg flex items-center gap-2">
+          Next Steps
+        </h3>
+        <% if (session.status === 'Primary Fermentation') { %>
+          <% if (session.is_sugar_break_reached) { %>
+            <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Past 1/3 Sugar Break</span>
+          <% } else { %>
+            <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Degassing &amp; Aeration Phase</span>
+          <% } %>
+        <% } %>
+      </div>
+
+      <% if (session.status === 'Primary Fermentation') { %>
+        <% if (!session.is_sugar_break_reached) { %>
+          <!-- Pre-1/3 Break: Degas & Aerate Daily -->
+          <div class="bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3">
+            <div class="flex items-start gap-2.5">
+              <span class="text-xl leading-none">💡</span>
+              <div>
+                <div class="text-sm font-bold text-base-content">
+                  Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.
+                </div>
+                <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
+                  During the first 3 to 5 days of primary fermentation, accumulated dissolved CO₂ is toxic to yeast and can cause foam-over ("volcano") explosions when dry additives are introduced.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-sm text-base-content">
+            <div class="flex items-start gap-2">
+              <span class="text-info font-bold">1.</span>
+              <span><strong>Daily Degas &amp; Aerate:</strong> Degas and aerate the batch daily before reaching this break (<%= sugarBreakFormatted %>). Oxygen is essential right now for healthy yeast cell growth and biomass building.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-info font-bold">2.</span>
+              <span><strong>Swirl Before Additions:</strong> Swirl gently before adding staggered nutrients (SNA) or measuring SG to release dissolved gas and avoid violent foaming.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-info font-bold">3.</span>
+              <span><strong>Approaching 1/3 Sugar Break (<%= sugarBreakFormatted %>):</strong> Monitor gravity. Aeration must stop completely as soon as SG reaches <%= sugarBreakFormatted %> to prevent oxidation during aging.</span>
+            </div>
+          </div>
+        <% } else { %>
+          <!-- Post-1/3 Break: Warning to Stop Aerating -->
+          <div class="bg-warning/15 border border-warning/30 rounded-lg p-3.5 mb-3">
+            <div class="flex items-start gap-2.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+              </svg>
+              <div>
+                <div class="text-sm font-bold text-base-content">
+                  Past 1/3 Sugar Break (<%= sugarBreakFormatted %>): Stop Aerating!
+                </div>
+                <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
+                  <strong>Warning:</strong> Stop aerating once past the 1/3 break to prevent oxidation during aging. Yeast has completed its aerobic growth phase. Any oxygen introduced now will not benefit the yeast and will oxidize delicate honey aromatics into cardboard or stale notes.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-sm text-base-content">
+            <div class="flex items-start gap-2">
+              <span class="text-warning font-bold">1.</span>
+              <span><strong>Airlock Sealed:</strong> Keep the carboy firmly under airlock with minimal headspace. Avoid splashing or whipping air into the must.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-warning font-bold">2.</span>
+              <span><strong>Gentle Swirling Only:</strong> If adding remaining nutrients, swirl very gently under airlock to release CO₂ without admitting air.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-warning font-bold">3.</span>
+              <span><strong>Wait for Gravity Stability:</strong> Let fermentation run until completion. Look for two identical SG readings 7+ days apart to confirm primary fermentation is complete.</span>
+            </div>
+          </div>
+        <% } %>
+      <% } else if (session.status === 'Planned') { %>
+        <p class="text-sm text-base-content leading-relaxed">
+          Pitch yeast and record your first Specific Gravity reading to establish the Original Gravity (OG). Daily degassing and aeration begins once fermentation takes off.
+        </p>
+      <% } else if (session.status === 'Aging') { %>
+        <p class="text-sm text-base-content leading-relaxed">
+          Batch is aging (modning). Keep vessel topped up and airlock intact to prevent oxidation.
+        </p>
+      <% } else if (session.status === 'Bottled') { %>
+        <p class="text-sm text-base-content leading-relaxed">
+          Batch is bottled! Store in a cool, dark place to mature.
+        </p>
+      <% } %>
     </div>
   </div>
 
@@ -68,13 +173,13 @@
       setTimeout(() => {
         const ctx = document.getElementById('fermentationChart');
         if (!ctx) return;
-        
+
         const data = <%- chartConfigJSON %>;
-        
+
         if (window.fermentationChartInstance) {
           window.fermentationChartInstance.destroy();
         }
-        
+
         window.fermentationChartInstance = new Chart(ctx, {
           type: 'scatter',
           data: {
@@ -184,7 +289,7 @@
                   <div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-base-300/60 text-xs">
                     <% if (b.measured_sg_delta !== undefined) { %>
                       <span class="font-medium">
-                        Measured SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %> 
+                        Measured SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %>
                         (<%= b.measured_sg_delta >= 0 ? '+' : '' %><%= b.measured_sg_delta.toFixed(3) %> SG)
                       </span>
                     <% } else if (b.measured_sg_before !== undefined) { %>
@@ -271,10 +376,11 @@
       Log Event
     </button>
   </div>
+
   <div class="pb-6">
-    <ul class="timeline timeline-vertical grid grid-cols-[max-content_auto_1fr] gap-x-6 [&>li]:grid-cols-[max-content_auto_1fr] [&>li]:grid-cols-subgrid [&>li]:col-span-3 [&>li]:gap-x-6">
+    <ul class="timeline timeline-vertical grid grid-cols-[max-content_auto_1fr] gap-x-6 [&>li]:grid-cols-[max-content_auto_1fr] [&>li]:grid-cols-subgrid [&>li]:col-span-3 [&>li]:gap-x-1 [&>li]:lg:gap-x-6">
       <% if (session.events && session.events.length > 0) { %>
-        <% 
+        <%
           const sortedEvents = [...session.events].sort(function(a, b) {
             return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
           });
@@ -301,7 +407,7 @@
                   <% if (sgStr) { %><div class="text-sm font-semibold text-base-content mt-0.5"><%= sgStr %></div><% } %>
                   <% if (note) { %><div class="text-xs text-pollen mt-0.5 leading-snug"><%= note %></div><% } %>
                 <% } else if (e.type === "addition") { %>
-                  <% 
+                  <%
                     let itemText = "";
                     if (e.data && e.data.inventory_item_id) {
                       const invItem = invMap.get(e.data.inventory_item_id);
@@ -343,7 +449,7 @@
       <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Log Event</h3>
       <form id="event-form" hx-post="/sessions/<%= session.id %>/events" hx-target="#main-content" onsubmit="document.getElementById('event_modal').close()">
         <input type="hidden" name="id" id="event-id" />
-        
+
         <div class="form-control w-full mb-3" id="event-type-container">
           <label class="label"><span class="label-text">Event Type</span></label>
           <select name="type" id="event-type-select" class="select select-bordered w-full" required onchange="updateEventModalFields()">
@@ -438,7 +544,7 @@
       <button>close</button>
     </form>
   </dialog>
-  
+
   <script>
     function toggleCustomIngredient() {
       const select = document.getElementById('event-inventory-select');
@@ -458,25 +564,25 @@
     function updateEventModalFields() {
       const type = document.getElementById('event-type-select').value;
       const desc = document.getElementById('event-description');
-      
+
       const sgContainer = document.getElementById('sg-data-container');
       const sgInput = document.getElementById('event-sg-input');
-      
+
       const additionContainer = document.getElementById('addition-data-container');
       const qtyInput = document.getElementById('quantity-used-input');
-      
+
       const noteLabel = document.getElementById('event-note-label');
       const noteInput = document.getElementById('event-note-input');
-      
+
       if (type === 'addition') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
-         
+
          additionContainer.classList.remove('hidden');
          additionContainer.classList.add('flex');
          qtyInput.required = true;
          toggleCustomIngredient();
-         
+
          desc.innerText = "Log additions like yeast pitching, nutrients, fruit, or spices.";
          noteLabel.innerText = "Note (Optional)";
          noteInput.placeholder = "e.g. Staggered addition, stirred well";
@@ -484,32 +590,32 @@
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
-         
+
          sgContainer.classList.remove('hidden');
          sgInput.required = true;
-         
+
          desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG).";
          noteLabel.innerText = "Note (Optional)";
          noteInput.placeholder = "e.g. Activity slowing, clear must";
       } else if (type === 'racking') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
-         
+
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
-         
+
          desc.innerText = "Transfer off the sediment (lees) to a new vessel. Progresses the batch to Aging.";
          noteLabel.innerText = "Notes (Optional)";
          noteInput.placeholder = "e.g. Racked to glass carboy, minimal headspace";
       } else if (type === 'bottling') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
-         
+
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
-         
+
          desc.innerText = "Final packaging. Completes the batch and moves it to Bottled.";
          noteLabel.innerText = "Notes (Optional)";
          noteInput.placeholder = "e.g. Yielded 10 bottles, primed with honey";
@@ -521,24 +627,24 @@
       const form = document.getElementById('event-form');
       document.getElementById('event-modal-title').innerText = "Log Event";
       document.getElementById('event-submit-btn').innerText = "Log Event";
-      
+
       form.setAttribute('hx-post', '/sessions/<%= session.id %>/events');
       htmx.process(form);
-      
+
       document.getElementById('event-id').value = "";
       document.getElementById('event-type-select').value = "sg_reading";
-      
+
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
       const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
       document.getElementById('event-timestamp-input').value = localISOTime;
-      
+
       document.getElementById('event-sg-input').value = "";
       document.getElementById('event-inventory-select').value = "";
       document.getElementById('custom-ingredient-input').value = "";
       document.getElementById('quantity-used-input').value = "";
       document.getElementById('unit-select').value = "g";
       document.getElementById('event-note-input').value = "";
-      
+
       updateEventModalFields();
       modal.showModal();
     }
@@ -548,23 +654,23 @@
       const form = document.getElementById('event-form');
       document.getElementById('event-modal-title').innerText = "Edit Event";
       document.getElementById('event-submit-btn').innerText = "Save Changes";
-      
+
       form.setAttribute('hx-post', '/sessions/<%= session.id %>/events/edit');
       htmx.process(form);
-      
+
       document.getElementById('event-id').value = event.id;
       document.getElementById('event-type-select').value = event.type;
-      
+
       const localTime = new Date(new Date(event.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
       document.getElementById('event-timestamp-input').value = localTime;
-      
+
       document.getElementById('event-sg-input').value = "";
       document.getElementById('event-inventory-select').value = "";
       document.getElementById('custom-ingredient-input').value = "";
       document.getElementById('quantity-used-input').value = "";
       document.getElementById('unit-select').value = "g";
       document.getElementById('event-note-input').value = event.data?.note || '';
-      
+
       if (event.type === 'sg_reading') {
         document.getElementById('event-sg-input').value = event.data?.sg !== undefined ? event.data.sg : '';
       } else if (event.type === 'addition') {
@@ -581,7 +687,7 @@
           document.getElementById('unit-select').value = event.data.unit;
         }
       }
-      
+
       updateEventModalFields();
       modal.showModal();
     }
