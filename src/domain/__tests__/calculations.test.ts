@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	calculateABV,
 	calculateFermentationProgress,
+	calculateOneThirdSugarBreak,
 	deriveSessionState,
 	type Event,
 	type Session,
@@ -70,6 +71,39 @@ describe("Brewing Calculations", () => {
 		});
 	});
 
+	describe("1/3 Sugar Break Calculation", () => {
+		it("calculates accurate 1/3 sugar break point for typical mead (OG: 1.110 -> 1.073)", () => {
+			// For OG 1.110 and target FG 1.000:
+			// Expected drop = 0.110
+			// 1/3 drop = 0.110 / 3 = 0.036666...
+			// Break point = 1.110 - 0.036666... = 1.073333... -> 1.073
+			const breakSg = calculateOneThirdSugarBreak(1.110, 1.000);
+			expect(breakSg).toBe(1.073);
+		});
+
+		it("defaults target FG to 1.000 when omitted", () => {
+			expect(calculateOneThirdSugarBreak(1.110)).toBe(1.073);
+		});
+
+		it("normalizes integer hydrometer points (e.g. 1110 and 1000)", () => {
+			expect(calculateOneThirdSugarBreak(1110, 1000)).toBe(1.073);
+		});
+
+		it("calculates correctly for different starting gravities and target FGs", () => {
+			// OG 1.090, target FG 1.000 -> drop 0.090 / 3 = 0.030 -> 1.060
+			expect(calculateOneThirdSugarBreak(1.090, 1.000)).toBe(1.060);
+			// OG 1.120, target FG 1.015 -> drop 0.105 / 3 = 0.035 -> 1.085
+			expect(calculateOneThirdSugarBreak(1.120, 1.015)).toBe(1.085);
+		});
+
+		it("returns 0 if OG <= Target FG or invalid numbers", () => {
+			expect(calculateOneThirdSugarBreak(1.000, 1.000)).toBe(0);
+			expect(calculateOneThirdSugarBreak(0.990, 1.000)).toBe(0);
+			expect(calculateOneThirdSugarBreak(NaN, 1.000)).toBe(0);
+			expect(calculateOneThirdSugarBreak(1.110, NaN)).toBe(0);
+		});
+	});
+
 	describe("deriveSessionState ABV & Progress integration", () => {
 		const baseSession: Session = {
 			id: 1,
@@ -78,8 +112,8 @@ describe("Brewing Calculations", () => {
 			created_at: "2026-08-01T12:00:00.000Z",
 		};
 
-		it("automatically computes Alternate ABV and progress on session derivation", () => {
-			const events: Event[] = [
+		it("automatically computes Alternate ABV, progress, and 1/3 sugar break on session derivation", () => {
+			const eventsPreBreak: Event[] = [
 				{
 					id: 1,
 					session_id: 1,
@@ -91,16 +125,35 @@ describe("Brewing Calculations", () => {
 					id: 2,
 					session_id: 1,
 					type: "sg_reading",
+					timestamp: "2026-08-03T12:00:00.000Z",
+					data: { sg: 1.090 },
+				},
+			];
+
+			const derivedPre = deriveSessionState(baseSession, eventsPreBreak);
+			expect(derivedPre.original_sg).toBe(1.110);
+			expect(derivedPre.current_sg).toBe(1.090);
+			expect(derivedPre.sugar_break_sg).toBe(1.073);
+			expect(derivedPre.is_sugar_break_reached).toBe(false);
+
+			const eventsPostBreak: Event[] = [
+				...eventsPreBreak,
+				{
+					id: 3,
+					session_id: 1,
+					type: "sg_reading",
 					timestamp: "2026-08-10T12:00:00.000Z",
 					data: { sg: 1.000 },
 				},
 			];
 
-			const derived = deriveSessionState(baseSession, events);
-			expect(derived.original_sg).toBe(1.110);
-			expect(derived.current_sg).toBe(1.000);
-			expect(derived.abv).toBe(15.85);
-			expect(derived.progress).toBe(100);
+			const derivedPost = deriveSessionState(baseSession, eventsPostBreak);
+			expect(derivedPost.original_sg).toBe(1.110);
+			expect(derivedPost.current_sg).toBe(1.000);
+			expect(derivedPost.sugar_break_sg).toBe(1.073);
+			expect(derivedPost.is_sugar_break_reached).toBe(true);
+			expect(derivedPost.abv).toBe(15.85);
+			expect(derivedPost.progress).toBe(100);
 		});
 	});
 });

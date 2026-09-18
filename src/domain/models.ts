@@ -19,14 +19,12 @@ export interface InventoryItem {
  */
 export function convertUnits(amount: number, fromUnit: string, toUnit: string): number {
   if (!fromUnit || !toUnit || fromUnit.toLowerCase() === toUnit.toLowerCase()) return amount;
-  
+
   const from = fromUnit.toLowerCase();
   const to = toUnit.toLowerCase();
-  
+
   // Base units for conversion: grams (for mass) and milliliters (for volume)
   let amountInBase = amount;
-  let isMass = false;
-  let isVolume = false;
 
   // Convert to base unit
   switch (from) {
@@ -44,7 +42,7 @@ export function convertUnits(amount: number, fromUnit: string, toUnit: string): 
     case 'packet':
     case 'pkt':
       // Treat packets as a generic unit (e.g., yeast) that doesn't usually cross-convert
-      return amount; 
+      return amount;
     default:
       // Unknown unit, return as is (could be 'sticks', 'cubes')
       return amount;
@@ -89,6 +87,8 @@ export interface Session {
   backsweetening_events?: BacksweeteningEvent[];
   current_sg?: number;
   original_sg?: number;
+  sugar_break_sg?: number;
+  is_sugar_break_reached?: boolean;
   abv?: number;
   progress?: number;
   age_days?: number;
@@ -159,6 +159,28 @@ export function calculateFermentationProgress(
   return Math.max(0, Number(progress.toFixed(1)));
 }
 
+/**
+ * Calculates the 1/3 Sugar Break point:
+ * Sugar Break SG = OG - ((OG - Target FG) / 3)
+ *
+ * For example, with OG = 1.110 and Target FG = 1.000,
+ * the 1/3 sugar break occurs at 1.073.
+ */
+export function calculateOneThirdSugarBreak(
+  og: number,
+  targetFg: number = 1000
+): number {
+  if (Number.isNaN(og) || Number.isNaN(targetFg)) return 0;
+  const normOg = og > 2 ? og / 1000 : og;
+  const normTargetFg = targetFg > 2 ? targetFg / 1000 : targetFg;
+
+  const totalExpectedDrop = normOg - normTargetFg;
+  if (totalExpectedDrop <= 0) return 0;
+
+  const breakSg = normOg - totalExpectedDrop / 3;
+  return Number(breakSg.toFixed(3));
+}
+
 
 import { formatAge, formatDateForDisplay } from "../views/formatters";
 export { formatAge, formatDateForDisplay };
@@ -222,10 +244,10 @@ export function checkChemicalStabilization(events: Event[], inventoryList?: Inve
 
   const additionEvents = events.filter(e => e.type === 'addition');
 
-  const isSulfiteText = (text: string) => 
+  const isSulfiteText = (text: string) =>
     /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i.test(text);
 
-  const isSorbateText = (text: string) => 
+  const isSorbateText = (text: string) =>
     /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i.test(text);
 
   for (const e of additionEvents) {
@@ -419,7 +441,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
   let status: Status = 'Planned';
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
-  
+
   // Sort events chronologically (oldest first)
   const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
@@ -433,15 +455,15 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
         if (status === 'Planned') status = 'Primary Fermentation';
       }
     }
-    
+
     if (event.type === 'addition') {
       if (status === 'Planned') status = 'Primary Fermentation';
     }
-    
+
     if (event.type === 'racking') {
       if (status !== 'Bottled') status = 'Aging';
     }
-    
+
     if (event.type === 'bottling') {
       status = 'Bottled';
     }
@@ -460,9 +482,18 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
 
   let abv = 0;
   let progress: number | undefined = undefined;
-  if (og !== undefined && currentSg !== undefined) {
-    abv = calculateABV(og, currentSg);
-    progress = calculateFermentationProgress(og, currentSg);
+  let sugarBreakSg: number | undefined = undefined;
+  let isSugarBreakReached: boolean | undefined = undefined;
+
+  if (og !== undefined) {
+    sugarBreakSg = calculateOneThirdSugarBreak(og, 1.000);
+    if (currentSg !== undefined) {
+      abv = calculateABV(og, currentSg);
+      progress = calculateFermentationProgress(og, currentSg);
+      if (sugarBreakSg > 0) {
+        isSugarBreakReached = currentSg <= sugarBreakSg;
+      }
+    }
   }
 
   let ageMs = 0;
@@ -482,6 +513,8 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
     backsweetening_events: backsweeteningEvents,
     original_sg: og,
     current_sg: currentSg,
+    sugar_break_sg: sugarBreakSg,
+    is_sugar_break_reached: isSugarBreakReached,
     abv: Number(abv.toFixed(2)),
     progress,
     age_days: Math.floor(ageMs / (1000 * 60 * 60 * 24)),
