@@ -91,6 +91,7 @@ describe("sessionView module", () => {
 		expect(vm.session.name).toBe("Test Batch");
 		expect(vm.ogFormatted).toBe("1.110");
 		expect(vm.currentSgFormatted).toBe("1.010");
+		expect(vm.sugarBreakFormatted).toBe("1.073");
 		expect(vm.chartBundle.sgData.length).toBe(2);
 		expect(vm.inventoryUsage.linkedGroups.length).toBe(1);
 		expect(vm.inventoryUsage.totalCost).toBe(5);
@@ -186,5 +187,67 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Backsweetening Guidance (Ettersøting)");
 		expect(detailHtml).toContain("Unlocked &amp; Safe");
 		expect(detailHtml).toContain("Log Backsweetening");
+	});
+
+	it("renders Next Steps card with Primary Care Tip and aeration prompt before 1/3 break", () => {
+		const preBreakEvents: Event[] = [
+			{
+				id: 301,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.110 },
+			},
+			{
+				id: 302,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-03T12:00:00.000Z",
+				data: { sg: 1.090 },
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			preBreakEvents,
+			mockInventory,
+		);
+
+		expect(detailHtml).toContain("Next Steps");
+		expect(detailHtml).toContain("1/3 Sugar Break");
+		expect(detailHtml).toContain("1.073");
+		expect(detailHtml).toContain("Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.");
+		expect(detailHtml).toContain("Degas and aerate the batch daily before reaching this break");
+		expect(detailHtml).toContain("Degassing &amp; Aeration Phase");
+	});
+
+	it("renders Next Steps card with Stop Aerating warning past 1/3 break", () => {
+		const postBreakEvents: Event[] = [
+			{
+				id: 401,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.110 },
+			},
+			{
+				id: 402,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-05T12:00:00.000Z",
+				data: { sg: 1.060 }, // past 1.073
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			postBreakEvents,
+			mockInventory,
+		);
+
+		expect(detailHtml).toContain("Next Steps");
+		expect(detailHtml).toContain("Past 1/3 Sugar Break (1.073): Stop Aerating!");
+		expect(detailHtml).toContain("Stop aerating once past the 1/3 break to prevent oxidation during aging");
+		expect(detailHtml).toContain("Past 1/3 Sugar Break");
 	});
 });
