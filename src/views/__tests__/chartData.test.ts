@@ -91,5 +91,32 @@ describe("chartData", () => {
 			expect(breakAnnotation?.label.content).toBe("1/3 Sugar Break (1.073)");
 			expect(breakAnnotation?.borderDash).toEqual([6, 4]);
 		});
+
+		it("adds pH reading annotation with measured value and theme color", () => {
+			const startDate = "2026-09-01T10:00:00Z";
+			const events: Event[] = [
+				{
+					id: 1,
+					session_id: 10,
+					type: "sg_reading",
+					timestamp: "2026-09-01T10:00:00Z",
+					data: { sg: 1.110 },
+				},
+				{
+					id: 2,
+					session_id: 10,
+					type: "ph_reading",
+					timestamp: "2026-09-02T10:00:00Z",
+					data: { ph: 3.65 },
+				},
+			];
+
+			const result = buildFermentationChartData(events, startDate);
+			expect(result.annotations.length).toBe(1);
+			expect(result.annotations[0].label.content).toBe("pH 3.65");
+			expect(result.annotations[0].borderColor).toBe("#3E7B7D");
+			expect(result.annotations[0].label.backgroundColor).toBe("#3E7B7D");
+			expect(result.annotations[0].xMin).toBe(1);
+		});
 	});
 });

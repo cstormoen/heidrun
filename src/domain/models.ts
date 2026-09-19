@@ -69,7 +69,7 @@ export function convertUnits(amount: number, fromUnit: string, toUnit: string): 
 export interface Event {
   id: number;
   session_id: number;
-  type: 'sg_reading' | 'addition' | 'racking' | 'bottling';
+  type: 'sg_reading' | 'addition' | 'racking' | 'bottling' | 'ph_reading';
   timestamp: string;
   data: any;
 }
@@ -86,6 +86,8 @@ export interface Session {
   is_chemically_stabilized?: boolean;
   backsweetening_events?: BacksweeteningEvent[];
   current_sg?: number;
+  current_ph?: number;
+  is_ph_out_of_range?: boolean;
   original_sg?: number;
   sugar_break_sg?: number;
   is_sugar_break_reached?: boolean;
@@ -184,6 +186,10 @@ export function calculateOneThirdSugarBreak(
 
 import { formatAge, formatDateForDisplay } from "../views/formatters";
 export { formatAge, formatDateForDisplay };
+
+// Optimal pH range for mead
+export const OPTIMAL_PH_MIN = 3.2;
+export const OPTIMAL_PH_MAX = 3.8;
 
 // 7 days in milliseconds required to confirm gravity stability
 export const GRAVITY_STABILITY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -441,6 +447,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
   let status: Status = 'Planned';
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
+  let currentPh: number | undefined = undefined;
 
   // Sort events chronologically (oldest first)
   const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -453,6 +460,13 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
         if (og === undefined) og = sg;
         currentSg = sg;
         if (status === 'Planned') status = 'Primary Fermentation';
+      }
+    }
+
+    if (event.type === 'ph_reading') {
+      const ph = event.data?.ph;
+      if (ph !== undefined && !isNaN(Number(ph))) {
+        currentPh = Number(ph);
       }
     }
 
@@ -513,6 +527,8 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
     backsweetening_events: backsweeteningEvents,
     original_sg: og,
     current_sg: currentSg,
+    current_ph: currentPh,
+    is_ph_out_of_range: currentPh !== undefined ? currentPh < OPTIMAL_PH_MIN || currentPh > OPTIMAL_PH_MAX : undefined,
     sugar_break_sg: sugarBreakSg,
     is_sugar_break_reached: isSugarBreakReached,
     abv: Number(abv.toFixed(2)),

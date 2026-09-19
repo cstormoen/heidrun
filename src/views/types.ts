@@ -94,6 +94,7 @@ export interface SessionDetailViewModel {
 	ogFormatted: string;
 	currentSgFormatted: string;
 	sugarBreakFormatted?: string;
+	currentPhFormatted?: string;
 	chartBundle: ChartDatasetBundle;
 	chartConfigJSON: string;
 	inventoryUsage: InventoryUsageSummary;

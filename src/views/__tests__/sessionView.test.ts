@@ -150,6 +150,113 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Stabilization Required");
 	});
 
+	it("renders session detail with pH reading in stats, timeline, and modal", () => {
+		const eventsWithPh: Event[] = [
+			...mockEvents,
+			{
+				id: 104,
+				session_id: 1,
+				type: "ph_reading",
+				timestamp: "2026-08-03T12:00:00.000Z",
+				data: { ph: 3.65, note: "Must adjusted with bicarbonate" },
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			eventsWithPh,
+			mockInventory,
+		);
+
+		// Current pH in stats bar
+		expect(detailHtml).toContain("Current pH");
+		expect(detailHtml).toContain("3.65");
+		expect(detailHtml).toContain("Optimal (3.2–3.8)");
+
+		// Timeline shows pH Reading
+		expect(detailHtml).toContain("pH Reading");
+		expect(detailHtml).toContain("pH 3.65");
+		expect(detailHtml).toContain("Must adjusted with bicarbonate");
+
+		// Modal options & container
+		expect(detailHtml).toContain('<option value="ph_reading">pH Reading</option>');
+		expect(detailHtml).toContain('id="ph-data-container"');
+		expect(detailHtml).toContain('name="ph"');
+
+		// In-range pH does not render guidance card
+		expect(detailHtml).not.toContain('id="ph-guidance-card"');
+	});
+
+	it("renders pH guidance card with malic acid adjustment when pH is above 3.8", () => {
+		const highPhEvents: Event[] = [
+			...mockEvents,
+			{
+				id: 105,
+				session_id: 1,
+				type: "ph_reading",
+				timestamp: "2026-08-20T12:00:00.000Z",
+				data: { ph: 3.95 },
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			highPhEvents,
+			mockInventory,
+		);
+
+		// Stats bar shows outside target
+		expect(detailHtml).toContain("Outside target (3.2–3.8)");
+
+		// pH guidance card is present
+		expect(detailHtml).toContain('id="ph-guidance-card"');
+		expect(detailHtml).toContain("optimal pH range for mead is <strong>3.2 to 3.8</strong>");
+		expect(detailHtml).toContain("Why pH Matters During Aging");
+		expect(detailHtml).toContain("Microbial Protection &amp; Sulfite Efficiency");
+		expect(detailHtml).toContain("Flavor &amp; Balance");
+		expect(detailHtml).toContain("Recommended Adjustment");
+		expect(detailHtml).toContain("malic acid (<em>eplesyre</em>)");
+		expect(detailHtml).toContain("1 gram of malic acid per liter of mead");
+		expect(detailHtml).toContain("3.8 or below");
+		expect(detailHtml).toContain("Log Malic Acid Addition");
+	});
+
+	it("renders pH guidance card with buffering adjustment when pH is below 3.2", () => {
+		const lowPhEvents: Event[] = [
+			...mockEvents,
+			{
+				id: 106,
+				session_id: 1,
+				type: "ph_reading",
+				timestamp: "2026-08-20T12:00:00.000Z",
+				data: { ph: 3.05 },
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			lowPhEvents,
+			mockInventory,
+		);
+
+		// Stats bar shows outside target
+		expect(detailHtml).toContain("Outside target (3.2–3.8)");
+
+		// pH guidance card is present with low pH advisory
+		expect(detailHtml).toContain('id="ph-guidance-card"');
+		expect(detailHtml).toContain("pH Low (&lt; 3.2)");
+		expect(detailHtml).toContain("too acidic for the yeast");
+		expect(detailHtml).toContain("Key Impacts of a pH Below 3.2");
+		expect(detailHtml).toContain("Yeast Stress &amp; Stalled Fermentation");
+		expect(detailHtml).toContain("Harsh Taste");
+		expect(detailHtml).toContain("How to Raise the pH Back to Safety");
+		expect(detailHtml).toContain("Chalk (Calcium Carbonate / <em>Kritt</em>)");
+		expect(detailHtml).toContain(
+			"Potassium Bicarbonate or Baking Soda (<em>Natron</em>)",
+		);
+		expect(detailHtml).toContain("Log Buffer Addition");
+	});
+
 	it("renders session card with Aging (Modning) and Chemically Stabilized badge", () => {
 		const cardHtml = renderSessionCard({
 			...mockSession,

@@ -62,10 +62,153 @@
       <div class="stat-title text-pollen">Calculated ABV</div>
       <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
     </div>
+    <% if (session.current_ph !== undefined) { %>
+      <div class="stat place-items-center">
+        <div class="stat-title text-pollen">Current pH</div>
+        <div class="stat-value text-2xl <%= (session.current_ph < 3.2 || session.current_ph > 3.8) ? 'text-warning' : 'text-secondary' %>"><%= currentPhFormatted %></div>
+        <% if (session.current_ph < 3.2 || session.current_ph > 3.8) { %>
+          <div class="stat-desc text-xs text-warning font-semibold">Outside target (3.2–3.8)</div>
+        <% } else { %>
+          <div class="stat-desc text-xs text-success font-semibold">Optimal (3.2–3.8)</div>
+        <% } %>
+      </div>
+    <% } %>
   </div>
 
   <!-- Next Steps Card -->
   <%- include('../partials/nextSteps', { session, currentSgFormatted, sugarBreakFormatted }) %>
+
+  <% if (session.current_ph !== undefined && (session.current_ph < 3.2 || session.current_ph > 3.8)) { %>
+    <!-- pH Range Guidance Card -->
+    <div class="card bg-base-100 border border-warning/50 shadow-sm mb-8" id="ph-guidance-card">
+      <div class="card-body p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <h3 class="card-title text-base-content text-lg flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
+            pH Advisory: Outside Optimal Range
+          </h3>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">
+            <%= session.current_ph > 3.8 ? 'pH High (> 3.8)' : 'pH Low (< 3.2)' %>
+          </span>
+        </div>
+
+        <div class="alert alert-warning bg-warning/15 border border-warning/30 rounded-lg p-3.5 mb-4 flex items-start gap-2.5">
+          <span class="text-xl leading-none">⚠️</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Current pH is <%= currentPhFormatted %>. The optimal pH range for mead is <strong>3.2 to 3.8</strong>.
+            </div>
+            <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
+              <% if (session.current_ph > 3.8) { %>
+                A pH reading of <%= currentPhFormatted %> exceeds the recommended threshold of 3.8. Adjusting acidity will protect against spoilage and enhance flavor.
+              <% } else { %>
+                If the pH value drops below <strong>3.2</strong>, the environment becomes <strong>too acidic for the yeast</strong>.
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <% if (session.current_ph < 3.2) { %>
+          <!-- Key Impacts of a pH Below 3.2 -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
+              <span>⚠️</span> Key Impacts of a pH Below 3.2
+            </h4>
+            <div class="space-y-2 text-sm text-base-content">
+              <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
+                <span class="text-warning font-bold">1.</span>
+                <div>
+                  <strong>Yeast Stress &amp; Stalled Fermentation:</strong>
+                  The optimal pH range for mead is <strong>3.2 to 3.8</strong>. When the pH drops below 3.2, it becomes too acidic for the yeast, causing cell stress that can severely slow down or completely halt fermentation (<em>stuck fermentation</em>).
+                </div>
+              </div>
+              <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
+                <span class="text-warning font-bold">2.</span>
+                <div>
+                  <strong>Harsh Taste:</strong>
+                  Excessive acid can make the mead taste overly sharp or sour, masking delicate honey aromatics.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- How to Raise the pH Back to Safety -->
+          <div class="bg-base-200/70 rounded-lg p-4 border border-base-300">
+            <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
+              <span>⚖️</span> How to Raise the pH Back to Safety
+            </h4>
+            <p class="text-sm text-base-content mb-2 leading-relaxed">
+              To bring the pH back into the optimal <strong>3.2–3.8</strong> range, you can neutralize the excess acid using an alkaline buffering agent:
+            </p>
+            <ul class="list-disc list-inside text-sm text-base-content space-y-1 ml-1 mb-3">
+              <li><strong>Chalk (Calcium Carbonate / <em>Kritt</em>):</strong> Add small amounts of chalk until the pH rises to 3.2 or above.</li>
+              <li><strong>Potassium Bicarbonate or Baking Soda (<em>Natron</em>):</strong> Adding calcium or sodium/potassium bicarbonate will also safely raise the pH and protect the yeast.</li>
+              <li><em>Tip:</em> Always dissolve the addition thoroughly and re-test with pH strips or a pH meter before adding more.</li>
+            </ul>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300/80">
+              <div class="text-xs text-pollen">
+                💡 <strong>Dosage tip:</strong> Add in small increments and stir gently; re-measure pH before adding more.
+              </div>
+              <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openBufferModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Log Buffer Addition
+              </button>
+            </div>
+          </div>
+        <% } else { %>
+          <!-- Why pH Matters During Aging -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
+              <span>🔬</span> Why pH Matters During Aging
+            </h4>
+            <div class="space-y-2 text-sm text-base-content">
+              <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
+                <span class="text-warning font-bold">1.</span>
+                <div>
+                  <strong>Microbial Protection &amp; Sulfite Efficiency:</strong>
+                  A pH above 3.8 leaves the mead more vulnerable to bacterial spoilage and infection. Furthermore, free sulfur dioxide (SO₂ / Campden) is significantly less effective at higher pH levels, meaning higher amounts of sulfite are required to maintain the same antioxidant and antibacterial shield.
+                </div>
+              </div>
+              <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
+                <span class="text-warning font-bold">2.</span>
+                <div>
+                  <strong>Flavor &amp; Balance:</strong>
+                  Acidity provides essential structure and crispness that balances residual sweetness and honey body; a pH above 3.8 can leave the mead tasting flat or flabby.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommended Adjustment -->
+          <div class="bg-base-200/70 rounded-lg p-4 border border-base-300">
+            <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
+              <span>⚖️</span> Recommended Adjustment
+            </h4>
+            <p class="text-sm text-base-content mb-2 leading-relaxed">
+              To lower the pH into the safe, balanced target zone (&le; 3.8), you can adjust the batch using <strong>malic acid (<em>eplesyre</em>)</strong>:
+            </p>
+            <ul class="list-disc list-inside text-sm text-base-content space-y-1 ml-1 mb-3">
+              <li><strong>Dosage:</strong> Add approximately <strong>1 gram of malic acid per liter of mead</strong> to lower the pH down to <strong>3.8 or below</strong>.</li>
+              <li><em>Tip:</em> Test with your pH strips after mixing thoroughly to ensure you hit the target 3.2–3.8 window without over-acidifying.</li>
+            </ul>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300/80">
+              <div class="text-xs text-pollen">
+                💡 <strong>Dosage tip:</strong> Add incrementally and stir gently; re-measure pH before adding more.
+              </div>
+              <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openMalicAcidModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Log Malic Acid Addition
+              </button>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% } %>
 
 
   <% if (chartBundle && chartBundle.sgData && chartBundle.sgData.length > 0) { %>
@@ -308,11 +451,16 @@
             </div>
             <div class="timeline-end timeline-box bg-base-100 border-base-300 p-4 w-full justify-self-stretch flex items-center gap-3 shadow-md my-2 mx-0">
               <div class="flex flex-col flex-grow min-w-0">
-                <span class="font-bold text-sm uppercase text-base-content"><%= e.type.replace("_", " ") %></span>
+                <span class="font-bold text-sm uppercase text-base-content"><%= e.type === "ph_reading" ? "pH Reading" : e.type.replace("_", " ") %></span>
                 <% if (e.type === "sg_reading") { %>
                   <% const sgStr = e.data && e.data.sg !== undefined ? e.data.sg.toFixed(3) : ""; %>
                   <% const note = (e.data && e.data.note || "").trim(); %>
                   <% if (sgStr) { %><div class="text-xs text-pollen mt-0.5"><%= sgStr %></div><% } %>
+                  <% if (note) { %><div class="text-xs text-pollen mt-0.5 leading-snug"><%= note %></div><% } %>
+                <% } else if (e.type === "ph_reading") { %>
+                  <% const phVal = e.data && e.data.ph !== undefined ? ("pH " + Number(e.data.ph).toFixed(2)) : ""; %>
+                  <% const note = (e.data && e.data.note || "").trim(); %>
+                  <% if (phVal) { %><div class="text-xs text-pollen font-medium mt-0.5"><%= phVal %></div><% } %>
                   <% if (note) { %><div class="text-xs text-pollen mt-0.5 leading-snug"><%= note %></div><% } %>
                 <% } else if (e.type === "addition") { %>
                   <%
@@ -362,6 +510,7 @@
           <label class="label"><span class="label-text">Event Type</span></label>
           <select name="type" id="event-type-select" class="select select-bordered w-full" required onchange="updateEventModalFields()">
             <option value="sg_reading">SG Reading</option>
+            <option value="ph_reading">pH Reading</option>
             <option value="addition">Addition (Nutrients, etc.)</option>
             <option value="racking">Racking</option>
             <option value="bottling">Bottling</option>
@@ -378,6 +527,12 @@
         <div id="sg-data-container" class="form-control w-full mb-3">
           <label class="label"><span class="label-text">SG Value</span></label>
           <input type="number" step="0.001" name="sg" id="event-sg-input" class="input input-bordered w-full" placeholder="e.g. 1.090" />
+        </div>
+
+        <!-- pH Container (for ph_reading) -->
+        <div id="ph-data-container" class="form-control w-full mb-3 hidden">
+          <label class="label"><span class="label-text">pH Value</span></label>
+          <input type="number" step="0.01" min="0" max="14" name="ph" id="event-ph-input" class="input input-bordered w-full" placeholder="e.g. 3.60" />
         </div>
 
         <!-- Addition Container (for addition) -->
@@ -476,6 +631,9 @@
       const sgContainer = document.getElementById('sg-data-container');
       const sgInput = document.getElementById('event-sg-input');
 
+      const phContainer = document.getElementById('ph-data-container');
+      const phInput = document.getElementById('event-ph-input');
+
       const additionContainer = document.getElementById('addition-data-container');
       const qtyInput = document.getElementById('quantity-used-input');
 
@@ -485,6 +643,8 @@
       if (type === 'addition') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
+         phContainer.classList.add('hidden');
+         phInput.required = false;
 
          additionContainer.classList.remove('hidden');
          additionContainer.classList.add('flex');
@@ -498,6 +658,8 @@
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
+         phContainer.classList.add('hidden');
+         phInput.required = false;
 
          sgContainer.classList.remove('hidden');
          sgInput.required = true;
@@ -505,9 +667,24 @@
          desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG).";
          noteLabel.innerText = "Note (Optional)";
          noteInput.placeholder = "e.g. Activity slowing, clear must";
+      } else if (type === 'ph_reading') {
+         additionContainer.classList.add('hidden');
+         additionContainer.classList.remove('flex');
+         qtyInput.required = false;
+         sgContainer.classList.add('hidden');
+         sgInput.required = false;
+
+         phContainer.classList.remove('hidden');
+         phInput.required = true;
+
+         desc.innerText = "Record the pH of the must or mead (typical range 3.20 – 4.00).";
+         noteLabel.innerText = "Note (Optional)";
+         noteInput.placeholder = "e.g. Must tested before pitch, or adjusted with potassium bicarbonate";
       } else if (type === 'racking') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
+         phContainer.classList.add('hidden');
+         phInput.required = false;
 
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
@@ -519,6 +696,8 @@
       } else if (type === 'bottling') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
+         phContainer.classList.add('hidden');
+         phInput.required = false;
 
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
@@ -547,6 +726,7 @@
       document.getElementById('event-timestamp-input').value = localISOTime;
 
       document.getElementById('event-sg-input').value = "";
+      document.getElementById('event-ph-input').value = "";
       document.getElementById('event-inventory-select').value = "";
       document.getElementById('custom-ingredient-input').value = "";
       document.getElementById('quantity-used-input').value = "";
@@ -573,6 +753,7 @@
       document.getElementById('event-timestamp-input').value = localTime;
 
       document.getElementById('event-sg-input').value = "";
+      document.getElementById('event-ph-input').value = "";
       document.getElementById('event-inventory-select').value = "";
       document.getElementById('custom-ingredient-input').value = "";
       document.getElementById('quantity-used-input').value = "";
@@ -581,6 +762,8 @@
 
       if (event.type === 'sg_reading') {
         document.getElementById('event-sg-input').value = event.data?.sg !== undefined ? event.data.sg : '';
+      } else if (event.type === 'ph_reading') {
+        document.getElementById('event-ph-input').value = event.data?.ph !== undefined ? event.data.ph : '';
       } else if (event.type === 'addition') {
         if (event.data?.inventory_item_id) {
           document.getElementById('event-inventory-select').value = event.data.inventory_item_id;
@@ -598,6 +781,52 @@
 
       updateEventModalFields();
       modal.showModal();
+    }
+
+    function openMalicAcidModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      let found = false;
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/malic|eplesyre|acid|syre/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        invSelect.value = "";
+        toggleCustomIngredient();
+        document.getElementById('custom-ingredient-input').value = 'Malic Acid (Eplesyre)';
+      }
+      document.getElementById('unit-select').value = 'g';
+      document.getElementById('event-note-input').value = 'pH adjustment: Add ~1 g/L malic acid to lower pH to <= 3.8';
+    }
+
+    function openBufferModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      let found = false;
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/chalk|kritt|calcium carbonate|bicarbonate|bikarbonat|natron|potassium/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        invSelect.value = "";
+        toggleCustomIngredient();
+        document.getElementById('custom-ingredient-input').value = 'Chalk (Calcium Carbonate / Kritt)';
+      }
+      document.getElementById('unit-select').value = 'g';
+      document.getElementById('event-note-input').value = 'pH buffer: Neutralize excess acid to raise pH to 3.2 or above';
     }
 
     function openStabilizerModal() {

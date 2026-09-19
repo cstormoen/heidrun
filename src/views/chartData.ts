@@ -51,6 +51,11 @@ export function buildFermentationChartData(
 				color: DEFAULT_ANNOTATION_COLOR,
 			};
 
+			const labelContent =
+				e.type === "ph_reading" && e.data?.ph !== undefined
+					? `pH ${Number(e.data.ph).toFixed(2)}`
+					: config.label;
+
 			annotations.push({
 				type: "line",
 				xMin: day,
@@ -60,7 +65,7 @@ export function buildFermentationChartData(
 				borderDash: [4, 4],
 				label: {
 					display: true,
-					content: config.label,
+					content: labelContent,
 					position: "start",
 					backgroundColor: config.color,
 					color: "white",

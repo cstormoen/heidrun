@@ -69,4 +69,36 @@ describe("HTTP server smoke integration", () => {
 		const jsRes = await fetch("http://localhost:3000/htmx.js");
 		expect(jsRes.status).toBe(200);
 	});
+
+	it("logs and displays a pH reading event", async () => {
+		const formData = new FormData();
+		formData.append("type", "ph_reading");
+		formData.append("timestamp", "2026-09-18T10:00");
+		formData.append("ph", "3.62");
+		formData.append("note", "Test Must pH Integration");
+
+		const postRes = await fetch("http://localhost:3000/sessions/1/events", {
+			method: "POST",
+			body: formData,
+			headers: { "HX-Request": "true" },
+		});
+		expect(postRes.status).toBe(200);
+		const html = await postRes.text();
+
+		expect(html).toContain("pH Reading");
+		expect(html).toContain("pH 3.62");
+		expect(html).toContain("Test Must pH Integration");
+		expect(html).toContain("Current pH");
+
+		// Clean up by extracting event ID and deleting it
+		const match = html.match(/\/sessions\/1\/events\/(\d+)/);
+		if (match) {
+			const eventId = match[1];
+			const delRes = await fetch(`http://localhost:3000/sessions/1/events/${eventId}`, {
+				method: "DELETE",
+				headers: { "HX-Request": "true" },
+			});
+			expect(delRes.status).toBe(200);
+		}
+	});
 });

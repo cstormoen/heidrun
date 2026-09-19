@@ -155,5 +155,54 @@ describe("Brewing Calculations", () => {
 			expect(derivedPost.abv).toBe(15.85);
 			expect(derivedPost.progress).toBe(100);
 		});
+
+		it("tracks the latest pH reading as current_ph", () => {
+			const eventsWithPh: Event[] = [
+				{
+					id: 1,
+					session_id: 1,
+					type: "ph_reading",
+					timestamp: "2026-08-01T12:00:00.000Z",
+					data: { ph: 3.8 },
+				},
+				{
+					id: 2,
+					session_id: 1,
+					type: "ph_reading",
+					timestamp: "2026-08-05T12:00:00.000Z",
+					data: { ph: 3.45 },
+				},
+			];
+
+			const derived = deriveSessionState(baseSession, eventsWithPh);
+			expect(derived.current_ph).toBe(3.45);
+			expect(derived.is_ph_out_of_range).toBe(false);
+		});
+
+		it("correctly identifies when pH is outside the optimal range (3.2 - 3.8)", () => {
+			const highPhEvents: Event[] = [
+				{
+					id: 1,
+					session_id: 1,
+					type: "ph_reading",
+					timestamp: "2026-08-01T12:00:00.000Z",
+					data: { ph: 3.95 },
+				},
+			];
+			const derivedHigh = deriveSessionState(baseSession, highPhEvents);
+			expect(derivedHigh.is_ph_out_of_range).toBe(true);
+
+			const lowPhEvents: Event[] = [
+				{
+					id: 2,
+					session_id: 1,
+					type: "ph_reading",
+					timestamp: "2026-08-01T12:00:00.000Z",
+					data: { ph: 3.05 },
+				},
+			];
+			const derivedLow = deriveSessionState(baseSession, lowPhEvents);
+			expect(derivedLow.is_ph_out_of_range).toBe(true);
+		});
 	});
 });

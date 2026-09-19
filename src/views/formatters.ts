@@ -96,6 +96,11 @@ export function formatSg(value?: number | null): string {
 	return value.toFixed(3);
 }
 
+export function formatPh(value?: number | null): string {
+	if (value === undefined || value === null || isNaN(value)) return "---";
+	return value.toFixed(2);
+}
+
 export function formatAbv(value?: number | null): string {
 	if (value === undefined || value === null || isNaN(value)) return "0%";
 	return `${value}%`;

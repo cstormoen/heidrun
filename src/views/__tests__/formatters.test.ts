@@ -5,6 +5,7 @@ import {
 	formatCost,
 	formatDateForDisplay,
 	formatInventoryQuantity,
+	formatPh,
 	formatQuantity,
 	formatSg,
 	formatTimelineDate,
@@ -95,6 +96,20 @@ describe("formatters", () => {
 			expect(formatSg(undefined)).toBe("---");
 			expect(formatSg(null)).toBe("---");
 			expect(formatSg(NaN)).toBe("---");
+		});
+	});
+
+	describe("formatPh", () => {
+		it("formats pH with 2 decimal places", () => {
+			expect(formatPh(3.6)).toBe("3.60");
+			expect(formatPh(3.456)).toBe("3.46");
+			expect(formatPh(4)).toBe("4.00");
+		});
+
+		it("returns placeholder when value is missing", () => {
+			expect(formatPh(undefined)).toBe("---");
+			expect(formatPh(null)).toBe("---");
+			expect(formatPh(NaN)).toBe("---");
 		});
 	});
 

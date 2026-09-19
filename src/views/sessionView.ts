@@ -1,7 +1,7 @@
 import type { Event, InventoryItem, Recipe, Session } from "../domain/models";
 import { deriveSessionState } from "../domain/models";
 import { buildFermentationChartData } from "./chartData";
-import { formatDateForDisplay, formatSg } from "./formatters";
+import { formatDateForDisplay, formatPh, formatSg } from "./formatters";
 import { summarizeInventoryUsage } from "./inventoryView";
 import { renderTemplate, renderView } from "./render";
 import type {
@@ -48,6 +48,7 @@ export function getSessionDetailViewModel(
 	const ogFormatted = formatSg(fullSession.original_sg);
 	const currentSgFormatted = formatSg(fullSession.current_sg);
 	const sugarBreakFormatted = formatSg(fullSession.sugar_break_sg);
+	const currentPhFormatted = formatPh(fullSession.current_ph);
 
 	const chartBundle = buildFermentationChartData(
 		events,
@@ -70,6 +71,7 @@ export function getSessionDetailViewModel(
 		ogFormatted,
 		currentSgFormatted,
 		sugarBreakFormatted,
+		currentPhFormatted,
 		chartBundle,
 		chartConfigJSON,
 		inventoryUsage,

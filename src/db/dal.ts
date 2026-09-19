@@ -12,6 +12,30 @@ db.run("PRAGMA foreign_keys = ON;");
 const schema = await Bun.file("src/db/schema.sql").text();
 db.exec(schema);
 
+// Ensure events table schema includes 'ph_reading' in CHECK constraint
+try {
+  const eventsTable = db.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'events'").get() as { sql: string } | null;
+  if (eventsTable && eventsTable.sql && !eventsTable.sql.includes("'ph_reading'")) {
+    db.run("PRAGMA foreign_keys = OFF;");
+    db.run(`
+      CREATE TABLE events_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('sg_reading', 'addition', 'racking', 'bottling', 'ph_reading')),
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        data TEXT,
+        FOREIGN KEY (session_id) REFERENCES sessions(id)
+      );
+    `);
+    db.run("INSERT INTO events_new (id, session_id, type, timestamp, data) SELECT id, session_id, type, timestamp, data FROM events;");
+    db.run("DROP TABLE events;");
+    db.run("ALTER TABLE events_new RENAME TO events;");
+    db.run("PRAGMA foreign_keys = ON;");
+  }
+} catch (err) {
+  console.error("Migration error for events table:", err);
+}
+
 export const DAL = {
   getRecipes: (): Recipe[] => {
     return db.query("SELECT * FROM recipes").all() as Recipe[];

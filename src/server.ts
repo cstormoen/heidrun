@@ -242,6 +242,13 @@ serve({
 						data.sg = sg;
 					}
 					if (note && note !== sgStr) data.note = note;
+				} else if (type === "ph_reading") {
+					const phStr = (formData.get("ph") || formData.get("data")) as string;
+					const ph = parseFloat(phStr);
+					if (!isNaN(ph)) {
+						data.ph = ph;
+					}
+					if (note && note !== phStr) data.note = note;
 				} else if (type === "addition") {
 					const invIdStr = formData.get("inventory_item_id") as string;
 					const qtyStr = formData.get("quantity_used") as string;
@@ -341,6 +348,12 @@ serve({
 						const sg = parseFloat(sgStr);
 						if (!isNaN(sg)) newData.sg = sg;
 						if (note && note !== sgStr) newData.note = note;
+					} else if (type === "ph_reading") {
+						const phStr = (formData.get("ph") ||
+							formData.get("data")) as string;
+						const ph = parseFloat(phStr);
+						if (!isNaN(ph)) newData.ph = ph;
+						if (note && note !== phStr) newData.note = note;
 					} else if (type === "racking" || type === "bottling") {
 						const legacyData = ((formData.get("data") || "") as string).trim();
 						const finalNote = note || legacyData;
