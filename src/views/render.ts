@@ -7,6 +7,7 @@ import {
 	formatAge,
 	formatCost,
 	formatDateForDisplay,
+	formatDateTimeForDisplay,
 	formatInventoryQuantity,
 	formatPh,
 	formatQuantity,
@@ -20,6 +21,7 @@ export const TEMPLATES_DIR = path.resolve(import.meta.dir, "../../templates");
 
 const DEFAULT_HELPERS = {
 	formatDateForDisplay,
+	formatDateTimeForDisplay,
 	formatTimelineDate,
 	formatTimelineDay,
 	formatAge,

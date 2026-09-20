@@ -10,6 +10,20 @@
         <% } else { %>
           <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Degassing &amp; Aeration Phase</span>
         <% } %>
+      <% } else if (session.status === 'Aging') { %>
+        <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Fining: Step 1 (Kieselsol [-])</span>
+        <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+          <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Chitosan Window Open (12–24h)</span>
+        <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Chitosan Overdue (&gt;24h)</span>
+        <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
+          <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Sediment Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+        <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
+          <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Sediment Compacted – Safe to Siphon</span>
+        <% } else { %>
+          <span class="badge bg-status-aging text-white text-xs font-semibold px-2 py-0.5">Aging &amp; Maturation</span>
+        <% } %>
       <% } %>
     </div>
 
@@ -79,9 +93,161 @@
         Pitch yeast and record your first Specific Gravity reading to establish the Original Gravity (OG). Daily degassing and aeration begins once fermentation takes off.
       </p>
     <% } else if (session.status === 'Aging') { %>
-      <p class="text-sm text-base-content leading-relaxed">
-        Batch is aging (modning). Keep vessel topped up and airlock intact to prevent oxidation.
-      </p>
+      <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+        <!-- Stage 1: Kieselsol added, awaiting Chitosan 12-24h window -->
+        <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <span class="text-xl leading-none">⏳</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Kieselsol [-] added <%= session.fining_state.hours_since_kieselsol %> hours ago. Wait 12–24 hours before adding Chitosan [+] (window opens in <%= session.fining_state.hours_until_chitosan_window %> hours).
+            </div>
+            <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
+              Dual-Stage Clarification: Kieselsol carries a negative (-) electrostatic charge and binds positively charged yeast proteins. Waiting 12 to 24 hours gives it time to disperse evenly through the mead before introducing positively charged Chitosan.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">1.</span>
+            <span><strong>Keep Carboy Sealed:</strong> Let the negative silica sol disperse without vigorous agitation.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">2.</span>
+            <span><strong>Prepare Chitosan (+):</strong> When the 12–24 hour window opens in <%= session.fining_state.hours_until_chitosan_window %> hours, add Chitosan to complete charge neutralization and initiate flocculation.</span>
+          </div>
+        </div>
+      <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+        <!-- Stage 1b: Chitosan window open (12-24h) -->
+        <div class="alert alert-success bg-success/15 border border-success/30 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <span class="text-xl leading-none">✨</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Optimal Window Open! It has been <%= session.fining_state.hours_since_kieselsol %> hours since Kieselsol was added (<%= session.fining_state.hours_remaining_in_chitosan_window %> hours remaining in the 12–24h window). Add Chitosan [+] now!
+            </div>
+            <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
+              Adding Chitosan (+) creates strong electrostatic bridges with the Kieselsol-coated particles, forming dense flocs that precipitate rapidly to the bottom and start the 7–14 day sediment compaction countdown.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-success font-bold">1.</span>
+            <span><strong>Add Chitosan (+):</strong> Pour in Chitosan and stir or swirl gently for 30 seconds to disperse without introducing oxygen.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-success font-bold">2.</span>
+            <span><strong>Begin Compaction Countdown:</strong> Once Chitosan is added, leave the vessel still to begin the 7–14 day sediment bed compaction timer.</span>
+          </div>
+        </div>
+      <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
+        <!-- Stage 1c: Chitosan overdue (>24h) -->
+        <div class="alert alert-warning bg-warning/15 border border-warning/30 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <span class="text-xl leading-none">⚠️</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Chitosan window overdue: <%= session.fining_state.hours_since_kieselsol %> hours have elapsed since Kieselsol addition. Add Chitosan [+] as soon as possible.
+            </div>
+            <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
+              Kieselsol has settled. Adding Chitosan (+) now will complete charge neutralization and bind any remaining suspended particles into tight sediment.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-warning font-bold">1.</span>
+            <span><strong>Add Chitosan (+):</strong> Add your dose of Chitosan and swirl very gently to mix.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-warning font-bold">2.</span>
+            <span><strong>Re-seal Airlock:</strong> Seal and place in a cool location to begin sediment compaction.</span>
+          </div>
+        </div>
+      <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
+        <!-- Stage 2: Sediment Compaction Countdown (Days 0-13) -->
+        <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <span class="text-xl leading-none">⏳</span>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Sediment Compaction Countdown: Day <%= (session.fining_state.days_compacting || 0) + 1 %> of 14 (<%= session.fining_state.days_remaining_to_compact %> days remaining until full compaction).
+            </div>
+            <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
+              <% if (session.fining_state.sediment_phase === 'loose') { %>
+                <strong>Loose Sediment Bed (<em>løst bunnfall</em>):</strong> During Days 1–6, flocs precipitate into a soft, fluffy layer at the bottom. Do NOT siphon or move the vessel yet — siphoning from a loose bed will draw haze directly into your bottles.
+              <% } else { %>
+                <strong>Compacting Bed (<em>sedimentkomprimering</em>):</strong> Between Days 7 and 14, gravity and electrostatic cohesion pull the sediment cake tight against the glass. Waiting the full 14 days guarantees maximum firmness and a crystal-clear pour.
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compaction Progress Bar -->
+        <div class="bg-base-200/80 rounded-lg p-3 border border-base-300 mb-3">
+          <div class="flex justify-between text-xs text-pollen mb-1 font-medium">
+            <span>Day 1: Flocculation</span>
+            <span>Day 7: Loose Bed Settled</span>
+            <span>Day 14: Tight Compaction</span>
+          </div>
+          <progress class="progress progress-secondary w-full" value="<%= session.fining_state.compaction_progress_pct %>" max="100"></progress>
+          <div class="flex justify-between text-xs mt-1">
+            <span class="text-secondary font-semibold"><%= session.fining_state.compaction_progress_pct %>% Compacted</span>
+            <span class="text-pollen"><%= session.fining_state.days_remaining_to_compact %> days to safe siphoning</span>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">1.</span>
+            <span><strong>Keep Carboy Completely Still:</strong> Any jostling or lifting will kick up the fluffy sediment bed. If moving is necessary, move 24–48 hours before siphoning.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">2.</span>
+            <span><strong>Cold Crashing (Optional):</strong> Chilling the vessel to 2–4°C accelerates compaction and tightens the sediment layer even faster.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-info font-bold">3.</span>
+            <span><strong>Wait for Day 14:</strong> Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.</span>
+          </div>
+        </div>
+      <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
+        <!-- Stage 3: Sediment fully compacted (Day 14+) -->
+        <div class="alert alert-success bg-success/15 border border-success/30 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <div class="text-sm font-bold text-base-content">
+              Sediment Bed Compacted (<em>kompakt bunnfall</em>)! Safe to siphon into bottles.
+            </div>
+            <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
+              14+ days of compaction have locked the yeast and protein sediment into a dense, solid cake at the bottom of the vessel. You can now siphon clear mead without drawing haze into the final pour.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-base-content">
+          <div class="flex items-start gap-2">
+            <span class="text-success font-bold">1.</span>
+            <span><strong>Sanitize Siphoning Gear:</strong> Prepare your auto-siphon, tubing, and sanitized bottles.</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-success font-bold">2.</span>
+            <span><strong>Siphon Above the Bed:</strong> Rest the siphon cap slightly above the tight sediment bed. Stop when liquid nears the cake to maintain pure clarity.</span>
+          </div>
+        </div>
+      <% } else { %>
+        <!-- Baseline Aging without fining -->
+        <div class="space-y-2 text-sm text-base-content">
+          <p class="leading-relaxed">
+            Batch is aging (<em>modning</em>). Keep vessel topped up and airlock intact to prevent oxidation.
+          </p>
+          <div class="bg-base-200/50 rounded-lg p-3 border border-base-300 text-xs text-pollen">
+            💡 <strong>Clarification Tip:</strong> If your mead is cloudy from suspended yeast and proteins after fermentation, use a two-component clarifier like <strong>Super-Kleer (Kieselsol [-] + Chitosan [+])</strong>. Adding Kieselsol first followed by Chitosan 12–24 hours later drops haze and starts the 7–14 day sediment compaction countdown for haze-free bottling.
+          </div>
+        </div>
+      <% } %>
     <% } else if (session.status === 'Bottled') { %>
       <p class="text-sm text-base-content leading-relaxed">
         Batch is bottled! Store in a cool, dark place to mature.

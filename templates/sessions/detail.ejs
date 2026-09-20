@@ -33,6 +33,17 @@
         Gravity Stable
       </span>
     <% } %>
+    <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+      <span class="badge badge-warning text-black" id="badge-fining-stage">Fining: Step 1 (Kieselsol)</span>
+    <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+      <span class="badge badge-success text-white" id="badge-fining-stage">Chitosan Window Open (12–24h)</span>
+    <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
+      <span class="badge badge-warning text-black" id="badge-fining-stage">Chitosan Overdue (&gt;24h)</span>
+    <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
+      <span class="badge badge-info text-white" id="badge-fining-stage">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+    <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
+      <span class="badge badge-success text-white" id="badge-fining-stage">Sediment Compacted</span>
+    <% } %>
   </div>
 
   <div class="stats shadow w-full mb-6 flex-wrap bg-base-100 border border-base-300">
@@ -417,6 +428,195 @@
           </button>
         </div>
       <% } %>
+    </div>
+  </div>
+
+  <!-- Clarification & Fining Compaction Countdown Card -->
+  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="clarification-fining-card">
+    <div class="card-body p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h3 class="card-title text-base-content text-lg flex items-center gap-2">
+          <% if (session.is_racked) { %>
+            <span class="text-xl">✨</span> Clarification &amp; Fining Compaction
+          <% } else { %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+            Clarification &amp; Fining Compaction (Locked)
+          <% } %>
+        </h3>
+        <% if (session.is_racked) { %>
+          <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+            <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Step 1: Kieselsol Active</span>
+          <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Step 2: Add Chitosan Now (12–24h)</span>
+          <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
+            <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Step 2: Chitosan Overdue</span>
+          <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
+            <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+          <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
+            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Sediment Compacted – Safe to Siphon</span>
+          <% } else { %>
+            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Unlocked &amp; Ready</span>
+          <% } %>
+        <% } else { %>
+          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Racking Recommended</span>
+        <% } %>
+      </div>
+
+      <p class="text-sm text-base-content mb-3 leading-relaxed">
+        <% if (!session.is_racked) { %>
+          <strong>Clarification is first recommended after racking.</strong> Transferring the mead off the heavy primary sediment bed (gross lees) prevents fining agents from being wasted on bulk yeast cake. After racking into secondary, dual-component clarifiers like <strong>Super-Kleer</strong> use opposite electrostatic charges (<strong>Kieselsol [-]</strong> first, followed by <strong>Chitosan [+]</strong> 12–24 hours later) to drop fine suspended haze and initiate the <strong>7 to 14 day sediment compaction countdown</strong> (*bunnfall*).
+        <% } else { %>
+          After fermentation and chemical stabilization, suspended yeast cells and proteins leave the mead cloudy. Dual-component clarifiers like <strong>Super-Kleer</strong> use opposite electrostatic charges: <strong>Kieselsol [-]</strong> is added first, followed by <strong>Chitosan [+]</strong> 12–24 hours later to flocculate particles and initiate a <strong>7 to 14 day sediment compaction countdown</strong> (*bunnfall*).
+        <% } %>
+      </p>
+
+      <!-- Two-Component Schedule Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <!-- Step 1: Kieselsol [-] -->
+        <div class="bg-base-200/60 rounded-lg p-3.5 border border-base-300">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
+              <span class="badge badge-xs <%= session.fining_state && session.fining_state.kieselsol_event ? 'badge-success' : 'badge-ghost' %>">1</span>
+              Component 1: Kieselsol [-]
+            </div>
+            <% if (session.fining_state && session.fining_state.kieselsol_event) { %>
+              <span class="text-xs text-success font-semibold">✓ Added</span>
+            <% } else { %>
+              <span class="text-xs text-pollen font-medium">Pending</span>
+            <% } %>
+          </div>
+          <div class="text-xs text-pollen leading-snug">
+            Negatively charged silica sol binds positively charged yeast proteins. Disperses through the mead over 12–24 hours.
+          </div>
+          <% if (session.fining_state && session.fining_state.kieselsol_time) { %>
+            <div class="text-xs text-secondary mt-2 font-medium">
+              Logged: <%= formatDateTimeForDisplay(session.fining_state.kieselsol_time) %>
+              (<%= session.fining_state.hours_since_kieselsol !== undefined ? session.fining_state.hours_since_kieselsol + 'h elapsed' : '' %>)
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Step 2: Chitosan [+] -->
+        <div class="bg-base-200/60 rounded-lg p-3.5 border border-base-300">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
+              <span class="badge badge-xs <%= session.fining_state && session.fining_state.chitosan_event ? 'badge-success' : 'badge-ghost' %>">2</span>
+              Component 2: Chitosan [+]
+            </div>
+            <% if (session.fining_state && session.fining_state.chitosan_event) { %>
+              <span class="text-xs text-success font-semibold">✓ Added</span>
+            <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+              <span class="text-xs text-success font-semibold">Ready to Add!</span>
+            <% } else if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+              <span class="text-xs text-warning font-semibold">Wait <%= session.fining_state.hours_until_chitosan_window %>h</span>
+            <% } else { %>
+              <span class="text-xs text-pollen font-medium">12–24h After Step 1</span>
+            <% } %>
+          </div>
+          <div class="text-xs text-pollen leading-snug">
+            Positively charged polymer neutralizes remaining charges and creates heavy flocs that precipitate rapidly to the bottom.
+          </div>
+          <% if (session.fining_state && session.fining_state.chitosan_time) { %>
+            <div class="text-xs text-secondary mt-2 font-medium">
+              Logged: <%= formatDateTimeForDisplay(session.fining_state.chitosan_time) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (session.fining_state && (session.fining_state.stage === 'sediment_compacting' || session.fining_state.stage === 'sediment_compacted')) { %>
+        <!-- Sediment Compaction Timer -->
+        <div class="bg-base-200/80 rounded-lg p-4 border border-base-300 mb-4" id="sediment-compaction-timer">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h4 class="font-bold text-sm text-base-content flex items-center gap-1.5">
+              <span>⏱️</span> Sediment Bed Compaction Timer (<em>Bunnfall-komprimering</em>)
+            </h4>
+            <% if (session.fining_state.safe_to_siphon) { %>
+              <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Safe to Siphon into Bottles</span>
+            <% } else { %>
+              <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Sediment Settling (Do Not Siphon)</span>
+            <% } %>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-center">
+            <div class="bg-base-100 rounded-lg p-2 border border-base-300">
+              <div class="text-xs text-pollen">Compacting Days</div>
+              <div class="text-lg font-bold text-secondary">Day <%= (session.fining_state.days_compacting || 0) + 1 %></div>
+            </div>
+            <div class="bg-base-100 rounded-lg p-2 border border-base-300">
+              <div class="text-xs text-pollen">Days Remaining</div>
+              <div class="text-lg font-bold text-secondary"><%= session.fining_state.days_remaining_to_compact %> days</div>
+            </div>
+            <div class="bg-base-100 rounded-lg p-2 border border-base-300">
+              <div class="text-xs text-pollen">Compaction Progress</div>
+              <div class="text-lg font-bold text-secondary"><%= session.fining_state.compaction_progress_pct %>%</div>
+            </div>
+            <div class="bg-base-100 rounded-lg p-2 border border-base-300">
+              <div class="text-xs text-pollen">Siphoning Safety</div>
+              <div class="text-sm font-bold <%= session.fining_state.safe_to_siphon ? 'text-success' : 'text-warning' %>">
+                <%= session.fining_state.safe_to_siphon ? 'Safe & Clear' : 'Haze Risk' %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar with Milestones -->
+          <div class="space-y-1 mb-3">
+            <div class="flex justify-between text-xs text-pollen font-medium">
+              <span>Day 0: Flocculation</span>
+              <span>Day 7: Loose Bed Settled</span>
+              <span>Day 14: Tight Compaction</span>
+            </div>
+            <progress class="progress progress-secondary w-full" value="<%= session.fining_state.compaction_progress_pct %>" max="100"></progress>
+          </div>
+
+          <div class="text-xs leading-relaxed p-2.5 rounded bg-base-100/70 border border-base-300">
+            <% if (session.fining_state.sediment_phase === 'loose') { %>
+              <span class="text-warning font-semibold">⚠️ Days 0–6 (Loose Bed):</span>
+              The sediment bed is fluffy and loose. The slightest movement or siphoning will draw haze into the pour. Keep the vessel stationary.
+            <% } else if (session.fining_state.sediment_phase === 'compacting') { %>
+              <span class="text-info font-semibold">ℹ️ Days 7–13 (Compacting):</span>
+              The sediment bed is compressing into a tighter layer. For maximum crystal clarity and haze-free pouring, wait until Day 14 for the sediment bed to reach full density.
+            <% } else { %>
+              <span class="text-success font-semibold">✓ Day 14+ (Compacted):</span>
+              The sediment bed is compressed into a firm layer (*kompakt bunnfall*) at the bottom. It is now safe to siphon into bottles without pulling haze into the final pour.
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-base-300/80">
+        <div class="text-xs text-pollen">
+          💡 <strong>Compaction Tip:</strong> Cold crashing the carboy (2–4°C) accelerates sediment bed compaction and ensures a tight, disturbance-resistant cake.
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <% if (!session.is_racked) { %>
+            <button type="button" class="btn btn-sm btn-warning gap-1" onclick="document.getElementById('event-type-select').value='racking'; openAddEventModal();">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+              Log Racking
+            </button>
+          <% } %>
+          <% if (!session.fining_state || session.fining_state.stage === 'none' || session.fining_state.stage === 'chitosan_overdue') { %>
+            <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openKieselsolModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Log Kieselsol [-]
+            </button>
+          <% } %>
+          <% if (!session.fining_state || session.fining_state.stage === 'kieselsol_added' || session.fining_state.stage === 'chitosan_ready' || session.fining_state.stage === 'chitosan_overdue') { %>
+            <button type="button" class="btn btn-sm <%= session.fining_state && session.fining_state.stage === 'chitosan_ready' ? 'btn-success text-white' : 'btn-secondary' %> gap-1" onclick="openChitosanModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Log Chitosan [+]
+            </button>
+          <% } %>
+          <% if (session.fining_state && session.fining_state.safe_to_siphon) { %>
+            <button type="button" class="btn btn-sm btn-success text-white gap-1" onclick="document.getElementById('event-type-select').value='bottling'; openAddEventModal();">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+              Log Bottling
+            </button>
+          <% } %>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -857,6 +1057,52 @@
         }
       }
       document.getElementById('event-note-input').value = 'Ettersøting (Backsweetening)';
+    }
+
+    function openKieselsolModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      let found = false;
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/kieselsol|silica|super-?kleer.*(?:part\s*(?:1|a)|k\.?c\.?\s*1|\b1\b)/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        invSelect.value = "";
+        toggleCustomIngredient();
+        document.getElementById('custom-ingredient-input').value = 'Kieselsol (Super-Kleer Part 1 [-])';
+      }
+      document.getElementById('unit-select').value = 'ml';
+      document.getElementById('event-note-input').value = 'Fining Step 1: Kieselsol [-] added; wait 12–24h before adding Chitosan [+]';
+    }
+
+    function openChitosanModal() {
+      openAddEventModal();
+      document.getElementById('event-type-select').value = 'addition';
+      updateEventModalFields();
+      const invSelect = document.getElementById('event-inventory-select');
+      let found = false;
+      for (let i = 0; i < invSelect.options.length; i++) {
+        if (/chitosan|super-?kleer.*(?:part\s*(?:2|b)|k\.?c\.?\s*2|\b2\b)/i.test(invSelect.options[i].text)) {
+          invSelect.selectedIndex = i;
+          toggleCustomIngredient();
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        invSelect.value = "";
+        toggleCustomIngredient();
+        document.getElementById('custom-ingredient-input').value = 'Chitosan (Super-Kleer Part 2 [+])';
+      }
+      document.getElementById('unit-select').value = 'ml';
+      document.getElementById('event-note-input').value = 'Fining Step 2: Chitosan [+] added; starts 7–14 day sediment compaction countdown';
     }
   </script>
 </div>

@@ -423,4 +423,178 @@ describe("sessionView module", () => {
 		expect(html).toContain("Degassing &amp; Aeration Phase");
 		expect(html).toContain("Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.");
 	});
+
+	it("renders Clarification & Fining Compaction card and Next Steps advice during Aging", () => {
+		// Un-racked session (e.g. stabilized but not racked yet)
+		const unRackedEvents: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.100 },
+			},
+			{
+				id: 2,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-20T12:00:00.000Z",
+				data: { sg: 1.000 },
+			},
+			{
+				id: 3,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-27T12:00:00.000Z",
+				data: { sg: 1.000 },
+			},
+		];
+		const htmlUnracked = renderSessionDetail(mockSession, unRackedEvents, mockInventory);
+		expect(htmlUnracked).toContain("id=\"clarification-fining-card\"");
+		expect(htmlUnracked).toContain("Clarification &amp; Fining Compaction (Locked)");
+		expect(htmlUnracked).toContain("Racking Recommended");
+		expect(htmlUnracked).toContain("Clarification is first recommended after racking");
+		expect(htmlUnracked).toContain("Log Kieselsol [-]");
+		expect(htmlUnracked).toContain("Log Racking");
+
+		// Aging session with racking (unlocked)
+		const agingEvents: Event[] = [
+			{
+				id: 10,
+				session_id: 1,
+				type: "racking",
+				timestamp: "2026-08-15T12:00:00.000Z",
+				data: { note: "Racked to secondary" },
+			},
+		];
+		const htmlNoFining = renderSessionDetail(mockSession, agingEvents, mockInventory);
+		expect(htmlNoFining).toContain("id=\"clarification-fining-card\"");
+		expect(htmlNoFining).toContain("Clarification &amp; Fining Compaction");
+		expect(htmlNoFining).not.toContain("Clarification &amp; Fining Compaction (Locked)");
+		expect(htmlNoFining).toContain("Unlocked &amp; Ready");
+		expect(htmlNoFining).toContain("Super-Kleer");
+		expect(htmlNoFining).toContain("Component 1: Kieselsol [-]");
+		expect(htmlNoFining).toContain("Component 2: Chitosan [+]");
+		expect(htmlNoFining).toContain("Log Kieselsol [-]");
+		expect(htmlNoFining).toContain("Clarification Tip");
+
+		// Stage 1: Kieselsol added (4 hours ago)
+		const now = Date.now();
+		const tKieselsol = new Date(now - 4 * 3600 * 1000).toISOString();
+		const eventsKieselsol: Event[] = [
+			{
+				id: 10,
+				session_id: 1,
+				type: "racking",
+				timestamp: "2026-08-15T12:00:00.000Z",
+				data: { note: "Racked to secondary" },
+			},
+			{
+				id: 701,
+				session_id: 1,
+				type: "addition",
+				timestamp: tKieselsol,
+				data: { ingredient: "Kieselsol (Super-Kleer Part 1)", quantity_used: 15, unit: "ml" },
+			},
+		];
+		const htmlKieselsol = renderSessionDetail(mockSession, eventsKieselsol, mockInventory);
+		expect(htmlKieselsol).toContain("Fining: Step 1 (Kieselsol [-])");
+		expect(htmlKieselsol).toContain("Wait 12–24 hours before adding Chitosan [+]");
+		expect(htmlKieselsol).toContain("Step 1: Kieselsol Active");
+
+		// Stage 2: Chitosan added (compacting day 4 of 14)
+		const tChitosan = new Date(now - 3 * 24 * 3600 * 1000).toISOString();
+		const eventsCompacting: Event[] = [
+			{
+				id: 10,
+				session_id: 1,
+				type: "racking",
+				timestamp: "2026-08-15T12:00:00.000Z",
+				data: { note: "Racked to secondary" },
+			},
+			{
+				id: 701,
+				session_id: 1,
+				type: "addition",
+				timestamp: new Date(now - 4 * 24 * 3600 * 1000).toISOString(),
+				data: { ingredient: "Kieselsol", quantity_used: 15, unit: "ml" },
+			},
+			{
+				id: 702,
+				session_id: 1,
+				type: "addition",
+				timestamp: tChitosan,
+				data: { ingredient: "Chitosan", quantity_used: 50, unit: "ml" },
+			},
+		];
+		const htmlCompacting = renderSessionDetail(mockSession, eventsCompacting, mockInventory);
+		expect(htmlCompacting).toContain("Sediment Compacting (Day 4/14)");
+		expect(htmlCompacting).toContain("Sediment Bed Compaction Timer");
+		expect(htmlCompacting).toContain("Loose Sediment Bed");
+		expect(htmlCompacting).toContain("Do NOT siphon or move the vessel yet");
+
+		// Stage 3: Day 14+ Compacted
+		const tChitosanOld = new Date(now - 15 * 24 * 3600 * 1000).toISOString();
+		const eventsCompacted: Event[] = [
+			{
+				id: 10,
+				session_id: 1,
+				type: "racking",
+				timestamp: "2026-08-15T12:00:00.000Z",
+				data: { note: "Racked to secondary" },
+			},
+			{
+				id: 701,
+				session_id: 1,
+				type: "addition",
+				timestamp: new Date(now - 16 * 24 * 3600 * 1000).toISOString(),
+				data: { ingredient: "Kieselsol", quantity_used: 15, unit: "ml" },
+			},
+			{
+				id: 702,
+				session_id: 1,
+				type: "addition",
+				timestamp: tChitosanOld,
+				data: { ingredient: "Chitosan", quantity_used: 50, unit: "ml" },
+			},
+		];
+		const htmlCompacted = renderSessionDetail(mockSession, eventsCompacted, mockInventory);
+		expect(htmlCompacted).toContain("Sediment Compacted – Safe to Siphon");
+		expect(htmlCompacted).toContain("Safe to Siphon into Bottles");
+		expect(htmlCompacted).toContain("Log Bottling");
+	});
+
+	it("renders fining status badges on session cards", () => {
+		const sessionCompacting: Session = {
+			...mockSession,
+			status: "Aging",
+			fining_state: {
+				stage: "sediment_compacting",
+				days_compacting: 3,
+				days_remaining_to_compact: 11,
+				compaction_progress_pct: 21,
+				sediment_phase: "loose",
+				safe_to_siphon: false,
+				status_label: "Sediment Settling – Loose Bed (Day 4 of 14)",
+			},
+		};
+		const cardHtml = renderSessionCard(sessionCompacting);
+		expect(cardHtml).toContain("Compacting (Day 4/14)");
+
+		const sessionCompacted: Session = {
+			...mockSession,
+			status: "Aging",
+			fining_state: {
+				stage: "sediment_compacted",
+				days_compacting: 14,
+				days_remaining_to_compact: 0,
+				compaction_progress_pct: 100,
+				sediment_phase: "compacted",
+				safe_to_siphon: true,
+				status_label: "Sediment Compacted – Safe to Siphon",
+			},
+		};
+		const cardHtml2 = renderSessionCard(sessionCompacted);
+		expect(cardHtml2).toContain("Sediment Compacted");
+	});
 });

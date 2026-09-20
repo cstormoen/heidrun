@@ -84,7 +84,9 @@ export interface Session {
   status?: Status;
   is_gravity_stable?: boolean;
   is_chemically_stabilized?: boolean;
+  is_racked?: boolean;
   backsweetening_events?: BacksweeteningEvent[];
+  fining_state?: FiningState;
   current_sg?: number;
   current_ph?: number;
   is_ph_out_of_range?: boolean;
@@ -96,6 +98,33 @@ export interface Session {
   age_days?: number;
   age_formatted?: string;
   start_date?: string;
+}
+
+export type FiningStage =
+  | 'none'
+  | 'kieselsol_added'
+  | 'chitosan_ready'
+  | 'chitosan_overdue'
+  | 'sediment_compacting'
+  | 'sediment_compacted';
+
+export type SedimentPhase = 'none' | 'loose' | 'compacting' | 'compacted';
+
+export interface FiningState {
+  stage: FiningStage;
+  kieselsol_event?: Event;
+  chitosan_event?: Event;
+  kieselsol_time?: string;
+  chitosan_time?: string;
+  hours_since_kieselsol?: number;
+  hours_until_chitosan_window?: number;
+  hours_remaining_in_chitosan_window?: number;
+  days_compacting?: number;
+  days_remaining_to_compact?: number;
+  compaction_progress_pct?: number;
+  sediment_phase: SedimentPhase;
+  safe_to_siphon: boolean;
+  status_label: string;
 }
 
 export interface BacksweeteningEvent {
@@ -184,8 +213,8 @@ export function calculateOneThirdSugarBreak(
 }
 
 
-import { formatAge, formatDateForDisplay } from "../views/formatters";
-export { formatAge, formatDateForDisplay };
+import { formatAge, formatDateForDisplay, formatDateTimeForDisplay } from "../views/formatters";
+export { formatAge, formatDateForDisplay, formatDateTimeForDisplay };
 
 // Optimal pH range for mead
 export const OPTIMAL_PH_MIN = 3.2;
@@ -441,13 +470,188 @@ export function getBacksweeteningEvents(
 }
 
 /**
+ * Recognizes Kieselsol (Component 1 [-]) addition text
+ */
+export function isKieselsolText(text: string): boolean {
+  return /kieselsol|silica\s*sol|super-?kleer\s*(?:part\s*(?:1|a)|k\.?c\.?\s*1|\b1\b)|fining\s*(?:agent\s*)?1/i.test(text);
+}
+
+/**
+ * Recognizes Chitosan (Component 2 [+]) addition text (supports English and Norwegian kitosan)
+ */
+export function isChitosanText(text: string): boolean {
+  return /(?:ch|k)itosan|super-?kleer\s*(?:part\s*(?:2|b)|k\.?c\.?\s*2|\b2\b)|fining\s*(?:agent\s*)?2/i.test(text);
+}
+
+/**
+ * Analyzes addition events to track two-component fining schedule and sediment compaction countdown
+ */
+export function getFiningState(
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  nowMs: number = Date.now()
+): FiningState {
+  const invMap = new Map<number, InventoryItem>();
+  if (inventoryList) {
+    for (const item of inventoryList) {
+      invMap.set(item.id, item);
+    }
+  }
+
+  const additions = events.filter(e => e.type === 'addition');
+  let latestKieselsol: Event | undefined;
+  let latestChitosan: Event | undefined;
+
+  for (const e of additions) {
+    const invName = (e.data?.inventory_item_id && invMap.has(e.data.inventory_item_id))
+      ? invMap.get(e.data.inventory_item_id)!.name
+      : '';
+    const ingredient = e.data?.ingredient || '';
+    const note = e.data?.note || '';
+
+    const specificText = `${ingredient} ${note}`.trim();
+    const fullText = `${invName} ${ingredient} ${note}`.trim();
+
+    let isKieselsol = false;
+    let isChitosan = false;
+
+    // First check specific text (custom ingredient name or addition note)
+    // to correctly distinguish individual steps when linked to combo inventory items
+    // (such as "Super-Kleer (Kieselsol & Kitosan)")
+    const specificKieselsol = isKieselsolText(specificText);
+    const specificChitosan = isChitosanText(specificText);
+
+    if (specificKieselsol && !specificChitosan) {
+      isKieselsol = true;
+    } else if (specificChitosan && !specificKieselsol) {
+      isChitosan = true;
+    } else {
+      isKieselsol = isKieselsolText(fullText);
+      isChitosan = isChitosanText(fullText);
+    }
+
+    if (isKieselsol) {
+      if (!latestKieselsol || new Date(e.timestamp).getTime() >= new Date(latestKieselsol.timestamp).getTime()) {
+        latestKieselsol = e;
+      }
+    }
+    if (isChitosan) {
+      if (!latestChitosan || new Date(e.timestamp).getTime() >= new Date(latestChitosan.timestamp).getTime()) {
+        latestChitosan = e;
+      }
+    }
+  }
+
+  if (!latestKieselsol && !latestChitosan) {
+    return {
+      stage: 'none',
+      sediment_phase: 'none',
+      safe_to_siphon: false,
+      status_label: 'Not started',
+    };
+  }
+
+  // If Chitosan is present, sediment compaction countdown is active
+  if (latestChitosan) {
+    const chitosanTime = new Date(latestChitosan.timestamp).getTime();
+    const elapsedMs = Math.max(0, nowMs - chitosanTime);
+    const daysCompacting = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, 14 - daysCompacting);
+    const progressPct = Math.min(100, Math.round((daysCompacting / 14) * 100));
+
+    let sedimentPhase: SedimentPhase;
+    let stage: FiningStage;
+    let safeToSiphon: boolean;
+    let statusLabel: string;
+
+    if (daysCompacting >= 14) {
+      stage = 'sediment_compacted';
+      sedimentPhase = 'compacted';
+      safeToSiphon = true;
+      statusLabel = 'Sediment Compacted – Safe to Siphon';
+    } else if (daysCompacting >= 7) {
+      stage = 'sediment_compacting';
+      sedimentPhase = 'compacting';
+      safeToSiphon = false;
+      statusLabel = `Sediment Compacting (Day ${daysCompacting + 1} of 14)`;
+    } else {
+      stage = 'sediment_compacting';
+      sedimentPhase = 'loose';
+      safeToSiphon = false;
+      statusLabel = `Sediment Settling – Loose Bed (Day ${daysCompacting + 1} of 14)`;
+    }
+
+    return {
+      stage,
+      kieselsol_event: latestKieselsol,
+      chitosan_event: latestChitosan,
+      kieselsol_time: latestKieselsol?.timestamp,
+      chitosan_time: latestChitosan.timestamp,
+      days_compacting: daysCompacting,
+      days_remaining_to_compact: daysRemaining,
+      compaction_progress_pct: progressPct,
+      sediment_phase: sedimentPhase,
+      safe_to_siphon: safeToSiphon,
+      status_label: statusLabel,
+    };
+  }
+
+  // Kieselsol added, awaiting Chitosan
+  const kieselsolTime = new Date(latestKieselsol!.timestamp).getTime();
+  const elapsedHours = Math.max(0, (nowMs - kieselsolTime) / (1000 * 60 * 60));
+  const hoursSince = Number(elapsedHours.toFixed(1));
+
+  if (elapsedHours < 12) {
+    const hoursUntil = Number(Math.max(0, 12 - elapsedHours).toFixed(1));
+    return {
+      stage: 'kieselsol_added',
+      kieselsol_event: latestKieselsol,
+      kieselsol_time: latestKieselsol!.timestamp,
+      hours_since_kieselsol: hoursSince,
+      hours_until_chitosan_window: hoursUntil,
+      sediment_phase: 'none',
+      safe_to_siphon: false,
+      status_label: `Awaiting Chitosan (Window opens in ${hoursUntil}h)`,
+    };
+  } else if (elapsedHours <= 24) {
+    const hoursRemaining = Number(Math.max(0, 24 - elapsedHours).toFixed(1));
+    return {
+      stage: 'chitosan_ready',
+      kieselsol_event: latestKieselsol,
+      kieselsol_time: latestKieselsol!.timestamp,
+      hours_since_kieselsol: hoursSince,
+      hours_remaining_in_chitosan_window: hoursRemaining,
+      sediment_phase: 'none',
+      safe_to_siphon: false,
+      status_label: `Add Chitosan Now (${hoursRemaining}h left in window)`,
+    };
+  } else {
+    return {
+      stage: 'chitosan_overdue',
+      kieselsol_event: latestKieselsol,
+      kieselsol_time: latestKieselsol!.timestamp,
+      hours_since_kieselsol: hoursSince,
+      sediment_phase: 'none',
+      safe_to_siphon: false,
+      status_label: `Chitosan Addition Overdue (${hoursSince}h elapsed)`,
+    };
+  }
+}
+
+/**
  * Derives the current state of a session based on its events and inventory items
  */
-export function deriveSessionState(session: Session, events: Event[], inventoryList?: InventoryItem[]): Session {
+export function deriveSessionState(
+  session: Session,
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  nowMs: number = Date.now()
+): Session {
   let status: Status = 'Planned';
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
   let currentPh: number | undefined = undefined;
+  let isRacked = false;
 
   // Sort events chronologically (oldest first)
   const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -475,6 +679,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
     }
 
     if (event.type === 'racking') {
+      isRacked = true;
       if (status !== 'Bottled') status = 'Aging';
     }
 
@@ -488,6 +693,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
   const backsweeteningEvents = isChemicallyStabilized
     ? getBacksweeteningEvents(sortedEvents, inventoryList, og)
     : [];
+  const finingState = getFiningState(sortedEvents, inventoryList, nowMs);
 
   // If gravity has stabilized over the required window and batch isn't bottled, primary is finished -> transition to Aging
   if (isGravityStable && status !== 'Bottled') {
@@ -515,7 +721,7 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
   if (sortedEvents.length > 0) {
     firstEventDateStr = sortedEvents[0].timestamp;
     const firstEventDate = new Date(firstEventDateStr).getTime();
-    ageMs = Math.max(0, Date.now() - firstEventDate);
+    ageMs = Math.max(0, nowMs - firstEventDate);
   }
 
   return {
@@ -524,7 +730,9 @@ export function deriveSessionState(session: Session, events: Event[], inventoryL
     status,
     is_gravity_stable: isGravityStable,
     is_chemically_stabilized: isChemicallyStabilized,
+    is_racked: isRacked,
     backsweetening_events: backsweeteningEvents,
+    fining_state: finingState,
     original_sg: og,
     current_sg: currentSg,
     current_ph: currentPh,

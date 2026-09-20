@@ -10,6 +10,20 @@ export function formatDateForDisplay(
 	return `${dd}.${mm}.${yyyy}`;
 }
 
+export function formatDateTimeForDisplay(
+	dateStr?: string | Date | null,
+): string {
+	if (!dateStr) return "";
+	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+	if (isNaN(d.getTime())) return "";
+	const dd = String(d.getDate()).padStart(2, "0");
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const yyyy = d.getFullYear();
+	const hh = String(d.getHours()).padStart(2, "0");
+	const min = String(d.getMinutes()).padStart(2, "0");
+	return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+}
+
 export function formatTimelineDate(dateStr?: string | Date | null): string {
 	if (!dateStr) return "";
 	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;

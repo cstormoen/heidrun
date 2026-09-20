@@ -12,6 +12,17 @@
       <% if (session.is_chemically_stabilized) { %>
         <span class="badge bg-apothecary-teal text-white border-apothecary-teal badge-sm">Chemically Stabilized</span>
       <% } %>
+      <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
+        <span class="badge badge-warning text-black border-warning badge-sm">Fining: Step 1</span>
+      <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+        <span class="badge badge-success text-white border-success badge-sm">Add Chitosan Now</span>
+      <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
+        <span class="badge badge-warning text-black border-warning badge-sm">Chitosan Overdue</span>
+      <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
+        <span class="badge badge-info text-white border-info badge-sm">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+      <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
+        <span class="badge badge-success text-white border-success badge-sm">Sediment Compacted</span>
+      <% } %>
       <% if (startDateStr) { %>
         <div class="text-sm text-pollen grid group" title="Click or hover to toggle">
           <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Age: <%= session.age_formatted %></span>

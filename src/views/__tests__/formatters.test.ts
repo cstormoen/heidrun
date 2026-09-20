@@ -4,6 +4,7 @@ import {
 	formatAge,
 	formatCost,
 	formatDateForDisplay,
+	formatDateTimeForDisplay,
 	formatInventoryQuantity,
 	formatPh,
 	formatQuantity,
@@ -23,6 +24,25 @@ describe("formatters", () => {
 			expect(formatDateForDisplay(undefined)).toBe("");
 			expect(formatDateForDisplay("")).toBe("");
 			expect(formatDateForDisplay("invalid-date")).toBe("");
+		});
+	});
+
+	describe("formatDateTimeForDisplay", () => {
+		it("formats ISO date string as DD.MM.YYYY HH:MM", () => {
+			const d = new Date("2026-09-08T17:00:00.000Z");
+			const formatted = formatDateTimeForDisplay(d.toISOString());
+			const dd = String(d.getDate()).padStart(2, "0");
+			const mm = String(d.getMonth() + 1).padStart(2, "0");
+			const yyyy = d.getFullYear();
+			const hh = String(d.getHours()).padStart(2, "0");
+			const min = String(d.getMinutes()).padStart(2, "0");
+			expect(formatted).toBe(`${dd}.${mm}.${yyyy} ${hh}:${min}`);
+		});
+
+		it("handles undefined or empty gracefully", () => {
+			expect(formatDateTimeForDisplay(undefined)).toBe("");
+			expect(formatDateTimeForDisplay("")).toBe("");
+			expect(formatDateTimeForDisplay("invalid-date")).toBe("");
 		});
 	});
 
