@@ -2,13 +2,6 @@
 
 This document is intended for AI agents and developers to quickly understand the project architecture, features, and available commands.
 
-## ✨ Unique Selling Points & Features
-**Unique Selling Points:**
-- **Zero-Friction Stack:** Powered by **Bun**, running TypeScript natively without a build step for the backend.
-- **SPA-like Experience:** Uses **HTMX** for dynamic DOM updates and seamless navigation without writing complex frontend JavaScript frameworks.
-- **Self-Contained & Fast:** Uses Bun's native, high-performance `bun:sqlite` module for zero-config database management.
-- **Clean Architecture:** Strong separation of concerns with a dedicated Data Access Layer (DAL) and pure domain logic.
-
 **Features:**
 - **Batch Tracking:** Log and monitor mead batches from must to bottling.
 - **Timeline Visualization:** Chronological sorting and tracking of brewing events.
@@ -16,7 +9,7 @@ This document is intended for AI agents and developers to quickly understand the
 - **Interactive Charts:** Visual insights into brewing data using **Chart.js** (via CDN, initialized client-side in template scripts).
 - **Modern UI:** Server-rendered HTML template literals styled with **Tailwind CSS v4** and **daisyUI v5**.
 
-## 📁 Directory Structure & Hints
+## Directory Structure & Hints
 Here is where you can find the important parts of the codebase:
 
 - **`/src/server.ts`**: The main entrypoint. Handles HTTP routing, HTMX endpoints, and HTML view rendering (Frontend UI and Backend Routing combined).
@@ -31,7 +24,7 @@ Here is where you can find the important parts of the codebase:
 
 *Hint: When updating the UI, inject HTML string templates inside `server.ts` and return them directly for HTMX to swap. If a redirect is required, use HTMX specific headers (e.g. `HX-Redirect`), but prefer inline swaps to maintain the SPA feel.*
 
-## 🚀 Relevant Commands
+## Relevant Commands
 
 The project uses `bun` for package management and task running. Always use **BypassSandbox: true** when running commands like the Bun server or Tailwind builder as an agent to avoid standard sandbox network/pipe limitations.
 
