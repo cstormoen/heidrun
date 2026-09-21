@@ -285,6 +285,8 @@ function findEarliestReadingAfter<T extends { time: number }>(readings: T[], tar
   return undefined;
 }
 
+// Shared helpers are intentionally kept small and pure so derivation functions can stay readable.
+
 /**
  * Checks if gravity has remained stable over at least 7 days (two identical SG readings)
  */
@@ -642,29 +644,39 @@ export function getFiningState(
   }
 }
 
-/**
- * Derives the current state of a session based on its events and inventory items
- */
-export function deriveSessionState(
-  session: Session,
+// Derivation functions are grouped here because they combine the helpers above into session-aware results.
+
+function deriveSessionMetrics(
   events: Event[],
   inventoryList?: InventoryItem[],
   nowMs: number = Date.now()
-): Session {
+): {
+  sortedEvents: Event[];
+  status: Status;
+  og: number | undefined;
+  currentSg: number | undefined;
+  currentPh: number | undefined;
+  isRacked: boolean;
+  isGravityStable: boolean;
+  isChemicallyStabilized: boolean;
+  backsweeteningEvents: BacksweeteningEvent[];
+  finingState: FiningState;
+} {
   let status: Status = 'Planned';
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
   let currentPh: number | undefined = undefined;
   let isRacked = false;
 
-  // Sort events chronologically (oldest first)
-  const sortedEvents = [...events].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const sortedEvents = [...events].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 
   for (const event of sortedEvents) {
     if (event.type === 'sg_reading') {
       let sg = event.data?.sg;
       if (sg !== undefined) {
-        if (sg > 2) sg = sg / 1000; // Normalize 1110 to 1.110
+        sg = normalizeSg(sg);
         if (og === undefined) og = sg;
         currentSg = sg;
         if (status === 'Planned') status = 'Primary Fermentation';
@@ -699,10 +711,45 @@ export function deriveSessionState(
     : [];
   const finingState = getFiningState(sortedEvents, inventoryList, nowMs);
 
-  // If gravity has stabilized over the required window and batch isn't bottled, primary is finished -> transition to Aging
   if (isGravityStable && status !== 'Bottled') {
     status = 'Aging';
   }
+
+  return {
+    sortedEvents,
+    status,
+    og,
+    currentSg,
+    currentPh,
+    isRacked,
+    isGravityStable,
+    isChemicallyStabilized,
+    backsweeteningEvents,
+    finingState,
+  };
+}
+
+/**
+ * Derives the current state of a session based on its events and inventory items
+ */
+export function deriveSessionState(
+  session: Session,
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  nowMs: number = Date.now()
+): Session {
+  const {
+    sortedEvents,
+    status,
+    og,
+    currentSg,
+    currentPh,
+    isRacked,
+    isGravityStable,
+    isChemicallyStabilized,
+    backsweeteningEvents,
+    finingState,
+  } = deriveSessionMetrics(events, inventoryList, nowMs);
 
   let abv = 0;
   let progress: number | undefined = undefined;
@@ -721,7 +768,7 @@ export function deriveSessionState(
   }
 
   let ageMs = 0;
-  let firstEventDateStr = undefined;
+  let firstEventDateStr: string | undefined;
   if (sortedEvents.length > 0) {
     firstEventDateStr = sortedEvents[0].timestamp;
     const firstEventDate = new Date(firstEventDateStr).getTime();
