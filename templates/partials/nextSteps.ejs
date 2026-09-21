@@ -157,7 +157,7 @@
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">3.</span>
-            <span><strong>Wait for Day 14:</strong> Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.</span>
+            <span><strong>Wait <%= (session.fining_state.days_remaining_to_compact !== undefined && session.fining_state.days_remaining_to_compact > 0) ? (session.fining_state.days_remaining_to_compact + ' more ' + (session.fining_state.days_remaining_to_compact === 1 ? 'day' : 'days') + ' (until Day 14)') : 'for Day 14' %>:</strong> Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>

@@ -38,7 +38,7 @@
                 <select name="inventory_item_id" class="select select-bordered select-xs w-32" required>
                   <option value="" disabled selected>Select...</option>
                   <% inventoryList.forEach(function(inv) { %>
-                    <option value="<%= inv.id %>"><%= inv.name %> (Stock: <%= inv.quantity_on_hand.toFixed(2) %> <%= inv.unit %>)</option>
+                    <option value="<%= inv.id %>"><%= inv.name %> (Stock: <%= (inv.quantity_on_hand !== undefined && inv.quantity_on_hand !== null ? Number(inv.quantity_on_hand).toFixed(2) : '0.00') %> <%= inv.unit %>)</option>
                   <% }); %>
                 </select>
                 <input type="number" step="any" name="quantity" class="input input-bordered input-xs w-16" placeholder="Qty" required value="<%= (e.data && e.data.quantity_used) || '' %>" />

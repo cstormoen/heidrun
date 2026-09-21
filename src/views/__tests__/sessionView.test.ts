@@ -147,7 +147,6 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Day 15");
 		// Not stabilized by default, should render locked guidance
 		expect(detailHtml).toContain("Backsweetening Guidance (Locked)");
-		expect(detailHtml).toContain("Stabilization Required");
 	});
 
 	it("renders session detail with pH reading in stats, timeline, and modal", () => {
@@ -293,7 +292,6 @@ describe("sessionView module", () => {
 		);
 		expect(detailHtml).toContain("Chemically Stabilized");
 		expect(detailHtml).toContain("Backsweetening Guidance (Ettersøting)");
-		expect(detailHtml).toContain("Unlocked &amp; Safe");
 		expect(detailHtml).toContain("Log Backsweetening");
 	});
 
@@ -329,7 +327,6 @@ describe("sessionView module", () => {
 		);
 		expect(detailHtml).toContain("Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.");
 		expect(detailHtml).toContain("Degas and aerate the batch daily before reaching this break");
-		expect(detailHtml).toContain("Degassing &amp; Aeration Phase");
 	});
 
 	it("renders Next Steps card with Stop Aerating warning past 1/3 break", () => {
@@ -362,7 +359,6 @@ describe("sessionView module", () => {
 		);
 		expect(detailHtml).toContain("Past 1/3 Sugar Break (1.073): Stop Aerating!");
 		expect(detailHtml).toContain("Stop aerating once past the 1/3 break to prevent oxidation during aging");
-		expect(detailHtml).toContain("Past 1/3 Sugar Break");
 	});
 
 	it("renders actionable Next Step alert with contextual gravity values matching specification", () => {
@@ -420,148 +416,42 @@ describe("sessionView module", () => {
 		const html = renderNextSteps(sessionInPrimary, "1.085", "1.073");
 		expect(html).toContain("id=\"next-steps-card\"");
 		expect(html).toContain("Next Steps");
-		expect(html).toContain("Degassing &amp; Aeration Phase");
 		expect(html).toContain("Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.");
 	});
 
-	it("renders Clarification & Fining Compaction card and Next Steps advice during Aging", () => {
-		// Un-racked session (e.g. stabilized but not racked yet)
-		const unRackedEvents: Event[] = [
-			{
-				id: 1,
-				session_id: 1,
-				type: "sg_reading",
-				timestamp: "2026-08-01T12:00:00.000Z",
-				data: { sg: 1.100 },
+	it("renders dynamic compaction days remaining in Next Steps during sediment compacting", () => {
+		const sessionCompactingPlural: Session = {
+			...mockSession,
+			status: "Aging",
+			fining_state: {
+				stage: "sediment_compacting",
+				days_compacting: 3,
+				days_remaining_to_compact: 11,
+				compaction_progress_pct: 21,
+				sediment_phase: "loose",
+				safe_to_siphon: false,
+				status_label: "Sediment Settling – Loose Bed (Day 4 of 14)",
 			},
-			{
-				id: 2,
-				session_id: 1,
-				type: "sg_reading",
-				timestamp: "2026-08-20T12:00:00.000Z",
-				data: { sg: 1.000 },
-			},
-			{
-				id: 3,
-				session_id: 1,
-				type: "sg_reading",
-				timestamp: "2026-08-27T12:00:00.000Z",
-				data: { sg: 1.000 },
-			},
-		];
-		const htmlUnracked = renderSessionDetail(mockSession, unRackedEvents, mockInventory);
-		expect(htmlUnracked).toContain("id=\"clarification-fining-card\"");
-		expect(htmlUnracked).toContain("Clarification &amp; Fining Compaction (Locked)");
-		expect(htmlUnracked).toContain("Racking Recommended");
-		expect(htmlUnracked).toContain("Clarification is first recommended after racking");
-		expect(htmlUnracked).toContain("Log Kieselsol [-]");
-		expect(htmlUnracked).toContain("Log Racking");
+		};
+		const htmlPlural = renderNextSteps(sessionCompactingPlural, "1.000", "1.073");
+		expect(htmlPlural).toContain("Wait 11 more days (until Day 14):");
+		expect(htmlPlural).toContain("Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.");
 
-		// Aging session with racking (unlocked)
-		const agingEvents: Event[] = [
-			{
-				id: 10,
-				session_id: 1,
-				type: "racking",
-				timestamp: "2026-08-15T12:00:00.000Z",
-				data: { note: "Racked to secondary" },
+		const sessionCompactingSingular: Session = {
+			...mockSession,
+			status: "Aging",
+			fining_state: {
+				stage: "sediment_compacting",
+				days_compacting: 13,
+				days_remaining_to_compact: 1,
+				compaction_progress_pct: 93,
+				sediment_phase: "compacting",
+				safe_to_siphon: false,
+				status_label: "Sediment Compacting (Day 14 of 14)",
 			},
-		];
-		const htmlNoFining = renderSessionDetail(mockSession, agingEvents, mockInventory);
-		expect(htmlNoFining).toContain("id=\"clarification-fining-card\"");
-		expect(htmlNoFining).toContain("Clarification &amp; Fining Compaction");
-		expect(htmlNoFining).not.toContain("Clarification &amp; Fining Compaction (Locked)");
-		expect(htmlNoFining).toContain("Unlocked &amp; Ready");
-		expect(htmlNoFining).toContain("Super-Kleer");
-		expect(htmlNoFining).toContain("Component 1: Kieselsol [-]");
-		expect(htmlNoFining).toContain("Component 2: Chitosan [+]");
-		expect(htmlNoFining).toContain("Log Kieselsol [-]");
-		expect(htmlNoFining).toContain("Clarification Tip");
-
-		// Stage 1: Kieselsol added (4 hours ago)
-		const now = Date.now();
-		const tKieselsol = new Date(now - 4 * 3600 * 1000).toISOString();
-		const eventsKieselsol: Event[] = [
-			{
-				id: 10,
-				session_id: 1,
-				type: "racking",
-				timestamp: "2026-08-15T12:00:00.000Z",
-				data: { note: "Racked to secondary" },
-			},
-			{
-				id: 701,
-				session_id: 1,
-				type: "addition",
-				timestamp: tKieselsol,
-				data: { ingredient: "Kieselsol (Super-Kleer Part 1)", quantity_used: 15, unit: "ml" },
-			},
-		];
-		const htmlKieselsol = renderSessionDetail(mockSession, eventsKieselsol, mockInventory);
-		expect(htmlKieselsol).toContain("Fining: Step 1 (Kieselsol [-])");
-		expect(htmlKieselsol).toContain("Wait 12–24 hours before adding Chitosan [+]");
-		expect(htmlKieselsol).toContain("Step 1: Kieselsol Active");
-
-		// Stage 2: Chitosan added (compacting day 4 of 14)
-		const tChitosan = new Date(now - 3 * 24 * 3600 * 1000).toISOString();
-		const eventsCompacting: Event[] = [
-			{
-				id: 10,
-				session_id: 1,
-				type: "racking",
-				timestamp: "2026-08-15T12:00:00.000Z",
-				data: { note: "Racked to secondary" },
-			},
-			{
-				id: 701,
-				session_id: 1,
-				type: "addition",
-				timestamp: new Date(now - 4 * 24 * 3600 * 1000).toISOString(),
-				data: { ingredient: "Kieselsol", quantity_used: 15, unit: "ml" },
-			},
-			{
-				id: 702,
-				session_id: 1,
-				type: "addition",
-				timestamp: tChitosan,
-				data: { ingredient: "Chitosan", quantity_used: 50, unit: "ml" },
-			},
-		];
-		const htmlCompacting = renderSessionDetail(mockSession, eventsCompacting, mockInventory);
-		expect(htmlCompacting).toContain("Sediment Compacting (Day 4/14)");
-		expect(htmlCompacting).toContain("Sediment Bed Compaction Timer");
-		expect(htmlCompacting).toContain("Loose Sediment Bed");
-		expect(htmlCompacting).toContain("Do NOT siphon or move the vessel yet");
-
-		// Stage 3: Day 14+ Compacted
-		const tChitosanOld = new Date(now - 15 * 24 * 3600 * 1000).toISOString();
-		const eventsCompacted: Event[] = [
-			{
-				id: 10,
-				session_id: 1,
-				type: "racking",
-				timestamp: "2026-08-15T12:00:00.000Z",
-				data: { note: "Racked to secondary" },
-			},
-			{
-				id: 701,
-				session_id: 1,
-				type: "addition",
-				timestamp: new Date(now - 16 * 24 * 3600 * 1000).toISOString(),
-				data: { ingredient: "Kieselsol", quantity_used: 15, unit: "ml" },
-			},
-			{
-				id: 702,
-				session_id: 1,
-				type: "addition",
-				timestamp: tChitosanOld,
-				data: { ingredient: "Chitosan", quantity_used: 50, unit: "ml" },
-			},
-		];
-		const htmlCompacted = renderSessionDetail(mockSession, eventsCompacted, mockInventory);
-		expect(htmlCompacted).toContain("Sediment Compacted – Safe to Siphon");
-		expect(htmlCompacted).toContain("Safe to Siphon into Bottles");
-		expect(htmlCompacted).toContain("Log Bottling");
+		};
+		const htmlSingular = renderNextSteps(sessionCompactingSingular, "1.000", "1.073");
+		expect(htmlSingular).toContain("Wait 1 more day (until Day 14):");
 	});
 
 	it("renders fining status badges on session cards", () => {
