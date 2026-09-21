@@ -223,6 +223,68 @@ export const OPTIMAL_PH_MAX = 3.8;
 // 7 days in milliseconds required to confirm gravity stability
 export const GRAVITY_STABILITY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+function normalizeSg(value: number): number {
+  if (Number.isNaN(value)) return value;
+  return value > 2 ? value / 1000 : value;
+}
+
+function buildInventoryMap(inventoryList?: InventoryItem[]): Map<number, InventoryItem> {
+  const invMap = new Map<number, InventoryItem>();
+  if (!inventoryList) return invMap;
+
+  for (const item of inventoryList) {
+    invMap.set(item.id, item);
+  }
+
+  return invMap;
+}
+
+function getEventText(event: Event, inventoryMap: Map<number, InventoryItem>): string {
+  const invName = event.data?.inventory_item_id && inventoryMap.has(event.data.inventory_item_id)
+    ? inventoryMap.get(event.data.inventory_item_id)!.name
+    : '';
+
+  return [invName, event.data?.ingredient, event.data?.note]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ');
+}
+
+function matchesAny(text: string, patterns: RegExp[]): boolean {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+const SULFITE_PATTERNS = [
+  /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i,
+];
+
+const SORBATE_PATTERNS = [
+  /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i,
+];
+
+const SWEETENER_PATTERNS = [
+  /honning|honey|sugar|sukker|sirup|syrup|ettersøt|backsweeten|sweet|søt/i,
+];
+
+function findLatestReadingBefore<T extends { time: number }>(readings: T[], targetTime: number): T | undefined {
+  for (let i = readings.length - 1; i >= 0; i--) {
+    if (readings[i].time <= targetTime) {
+      return readings[i];
+    }
+  }
+
+  return undefined;
+}
+
+function findEarliestReadingAfter<T extends { time: number }>(readings: T[], targetTime: number): T | undefined {
+  for (let i = 0; i < readings.length; i++) {
+    if (readings[i].time > targetTime) {
+      return readings[i];
+    }
+  }
+
+  return undefined;
+}
+
 /**
  * Checks if gravity has remained stable over at least 7 days (two identical SG readings)
  */
@@ -230,8 +292,7 @@ export function checkGravityStability(events: Event[]): boolean {
   const sgEvents = events
     .filter(e => e.type === 'sg_reading' && e.data?.sg !== undefined)
     .map(e => {
-      let sg = e.data.sg;
-      if (sg > 2) sg = sg / 1000;
+      const sg = normalizeSg(e.data.sg);
       return {
         sg: Number(sg.toFixed(3)),
         time: new Date(e.timestamp).getTime(),
@@ -267,35 +328,17 @@ export function checkGravityStability(events: Event[]): boolean {
  * Checks if both stabilizer ingredients (sulfite + sorbate) have been logged via addition events
  */
 export function checkChemicalStabilization(events: Event[], inventoryList?: InventoryItem[]): boolean {
-  const invMap = new Map<number, InventoryItem>();
-  if (inventoryList) {
-    for (const item of inventoryList) {
-      invMap.set(item.id, item);
-    }
-  }
+  const invMap = buildInventoryMap(inventoryList);
+  const additionEvents = events.filter(e => e.type === 'addition');
+
+  const isSulfiteText = (text: string) => matchesAny(text, SULFITE_PATTERNS);
+  const isSorbateText = (text: string) => matchesAny(text, SORBATE_PATTERNS);
 
   let hasSulfite = false;
   let hasSorbate = false;
 
-  const additionEvents = events.filter(e => e.type === 'addition');
-
-  const isSulfiteText = (text: string) =>
-    /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i.test(text);
-
-  const isSorbateText = (text: string) =>
-    /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i.test(text);
-
-  for (const e of additionEvents) {
-    let combinedText = '';
-    if (e.data?.inventory_item_id && invMap.has(e.data.inventory_item_id)) {
-      combinedText += ' ' + invMap.get(e.data.inventory_item_id)!.name;
-    }
-    if (e.data?.ingredient) {
-      combinedText += ' ' + e.data.ingredient;
-    }
-    if (e.data?.note) {
-      combinedText += ' ' + e.data.note;
-    }
+  for (const event of additionEvents) {
+    const combinedText = getEventText(event, invMap);
 
     if (isSulfiteText(combinedText)) {
       hasSulfite = true;
@@ -316,34 +359,17 @@ export function getBacksweeteningEvents(
   inventoryList?: InventoryItem[],
   og?: number,
 ): BacksweeteningEvent[] {
-  const invMap = new Map<number, InventoryItem>();
-  if (inventoryList) {
-    for (const item of inventoryList) {
-      invMap.set(item.id, item);
-    }
-  }
+  const invMap = buildInventoryMap(inventoryList);
 
-  const isSulfiteText = (text: string) =>
-    /campden|metabisulfite|metabisulphite|k-?meta|\bsulfite\b|\bsulphite\b/i.test(text);
-
-  const isSorbateText = (text: string) =>
-    /sorbistat|potassium\s*sorbate|k-?sorbate|\bsorbate\b/i.test(text);
+  const isSulfiteText = (text: string) => matchesAny(text, SULFITE_PATTERNS);
+  const isSorbateText = (text: string) => matchesAny(text, SORBATE_PATTERNS);
 
   let lastSulfiteTime: number | null = null;
   let lastSorbateTime: number | null = null;
 
   for (const e of events) {
     if (e.type !== "addition") continue;
-    let combinedText = "";
-    if (e.data?.inventory_item_id && invMap.has(e.data.inventory_item_id)) {
-      combinedText += " " + invMap.get(e.data.inventory_item_id)!.name;
-    }
-    if (e.data?.ingredient) {
-      combinedText += " " + e.data.ingredient;
-    }
-    if (e.data?.note) {
-      combinedText += " " + e.data.note;
-    }
+    const combinedText = getEventText(e, invMap);
 
     const t = new Date(e.timestamp).getTime();
     if (isSulfiteText(combinedText)) {
@@ -389,8 +415,7 @@ export function getBacksweeteningEvents(
   const sgReadings = events
     .filter((e) => e.type === "sg_reading" && e.data?.sg !== undefined)
     .map((e) => {
-      let sg = e.data.sg;
-      if (sg > 2) sg = sg / 1000;
+      const sg = normalizeSg(e.data.sg);
       return {
         sg: Number(sg.toFixed(3)),
         time: new Date(e.timestamp).getTime(),
@@ -406,36 +431,20 @@ export function getBacksweeteningEvents(
     if (t < stabilizationTime) continue;
 
     const invItem = e.data?.inventory_item_id ? invMap.get(e.data.inventory_item_id) : undefined;
-    let combinedText = "";
-    if (invItem) combinedText += " " + invItem.name;
-    if (e.data?.ingredient) combinedText += " " + e.data.ingredient;
-    if (e.data?.note) combinedText += " " + e.data.note;
+    const combinedText = getEventText(e, invMap);
 
     if (isSulfiteText(combinedText) || isSorbateText(combinedText)) continue;
 
     const isSweetener =
       invItem?.category === "Honey & Sugars" ||
-      /honning|honey|sugar|sukker|sirup|syrup|ettersøt|backsweeten|sweet|søt/i.test(combinedText);
+      matchesAny(combinedText, SWEETENER_PATTERNS);
 
     if (!isSweetener) continue;
 
-    // Find latest SG reading before this addition
-    let sgBefore: number | undefined = undefined;
-    for (let i = sgReadings.length - 1; i >= 0; i--) {
-      if (sgReadings[i].time <= t) {
-        sgBefore = sgReadings[i].sg;
-        break;
-      }
-    }
-
-    // Find earliest SG reading after this addition
-    let sgAfter: number | undefined = undefined;
-    for (let i = 0; i < sgReadings.length; i++) {
-      if (sgReadings[i].time > t) {
-        sgAfter = sgReadings[i].sg;
-        break;
-      }
-    }
+    const sgBeforeEvent = findLatestReadingBefore(sgReadings, t);
+    const sgAfterEvent = findEarliestReadingAfter(sgReadings, t);
+    const sgBefore = sgBeforeEvent?.sg;
+    const sgAfter = sgAfterEvent?.sg;
 
     let measuredDelta: number | undefined = undefined;
     if (sgBefore !== undefined && sgAfter !== undefined) {
@@ -491,12 +500,7 @@ export function getFiningState(
   inventoryList?: InventoryItem[],
   nowMs: number = Date.now()
 ): FiningState {
-  const invMap = new Map<number, InventoryItem>();
-  if (inventoryList) {
-    for (const item of inventoryList) {
-      invMap.set(item.id, item);
-    }
-  }
+  const invMap = buildInventoryMap(inventoryList);
 
   const additions = events.filter(e => e.type === 'addition');
   let latestKieselsol: Event | undefined;
