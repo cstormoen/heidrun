@@ -167,8 +167,7 @@
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
         <!-- Stage 2: Sediment Compaction Countdown (Days 0-13) -->
-        <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
-          <span class="text-xl leading-none">⏳</span>
+        <div class="mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
           <div>
             <div class="text-sm font-bold text-base-content">
               Sediment Compaction Countdown: Day <%= (session.fining_state.days_compacting || 0) + 1 %> of 14 (<%= session.fining_state.days_remaining_to_compact %> days remaining until full compaction).
