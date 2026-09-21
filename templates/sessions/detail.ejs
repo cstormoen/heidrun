@@ -597,7 +597,7 @@
   </div>
 
   <div class="flex items-center justify-between mb-4">
-    <h3 class="text-xl font-bold text-base-content">Event History</h3>
+    <h3 id="event-history-title" class="text-xl font-bold text-base-content scroll-mt-4">Event History</h3>
     <button type="button" class="btn btn-primary btn-sm gap-1" onclick="openAddEventModal()">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
       Log Event
@@ -653,6 +653,8 @@
                   %>
                   <% if (itemText) { %><div class="text-xs text-pollen font-medium mt-0.5"><%= itemText %></div><% } %>
                   <% if (note) { %><div class="text-sm text-base-content mt-1 leading-snug"><%= note %></div><% } %>
+                <% } else if (e.type === "comment") { %>
+                  <div class="text-sm text-base-content mt-0.5 leading-snug"><%= (e.data && e.data.note) || "" %></div>
                 <% } else if (e.data && e.data.note) { %>
                   <div class="text-sm text-base-content mt-0.5 leading-snug"><%= e.data.note %></div>
                 <% } %>
@@ -679,7 +681,7 @@
   <dialog id="event_modal" class="modal">
     <div class="modal-box">
       <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Log Event</h3>
-      <form id="event-form" hx-post="/sessions/<%= session.id %>/events" hx-target="#main-content" onsubmit="document.getElementById('event_modal').close()">
+      <form id="event-form" hx-post="/sessions/<%= session.id %>/events" hx-target="#main-content" hx-swap="innerHTML show:#event-history-title:top focus-scroll:false" onsubmit="document.getElementById('event_modal').close()">
         <input type="hidden" name="id" id="event-id" />
 
         <div class="form-control w-full mb-3" id="event-type-container">
@@ -690,6 +692,7 @@
             <option value="addition">Addition (Nutrients, etc.)</option>
             <option value="racking">Racking</option>
             <option value="bottling">Bottling</option>
+            <option value="comment">Comment</option>
           </select>
           <p id="event-description" class="text-xs text-pollen mt-1 leading-tight"></p>
         </div>
@@ -815,6 +818,7 @@
 
       const noteLabel = document.getElementById('event-note-label');
       const noteInput = document.getElementById('event-note-input');
+      noteInput.required = false;
 
       if (type === 'addition') {
          sgContainer.classList.add('hidden');
@@ -882,6 +886,20 @@
          desc.innerText = "Final packaging. Completes the batch and moves it to Bottled.";
          noteLabel.innerText = "Notes (Optional)";
          noteInput.placeholder = "e.g. Yielded 10 bottles, primed with honey";
+      } else if (type === 'comment') {
+         sgContainer.classList.add('hidden');
+         sgInput.required = false;
+         phContainer.classList.add('hidden');
+         phInput.required = false;
+
+         additionContainer.classList.add('hidden');
+         additionContainer.classList.remove('flex');
+         qtyInput.required = false;
+
+         desc.innerText = "Add a note, observation, or tasting comment for this batch.";
+         noteLabel.innerText = "Note";
+         noteInput.required = true;
+         noteInput.placeholder = "e.g. Degassed carboy, tasting notes, clarity observations...";
       }
     }
 

@@ -12,16 +12,16 @@ db.run("PRAGMA foreign_keys = ON;");
 const schema = await Bun.file("src/db/schema.sql").text();
 db.exec(schema);
 
-// Ensure events table schema includes 'ph_reading' in CHECK constraint
+// Ensure events table schema includes 'ph_reading' and 'comment' in CHECK constraint
 try {
   const eventsTable = db.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'events'").get() as { sql: string } | null;
-  if (eventsTable && eventsTable.sql && !eventsTable.sql.includes("'ph_reading'")) {
+  if (eventsTable && eventsTable.sql && (!eventsTable.sql.includes("'ph_reading'") || !eventsTable.sql.includes("'comment'"))) {
     db.run("PRAGMA foreign_keys = OFF;");
     db.run(`
       CREATE TABLE events_new (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER NOT NULL,
-        type TEXT NOT NULL CHECK (type IN ('sg_reading', 'addition', 'racking', 'bottling', 'ph_reading')),
+        type TEXT NOT NULL CHECK (type IN ('sg_reading', 'addition', 'racking', 'bottling', 'ph_reading', 'comment')),
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         data TEXT,
         FOREIGN KEY (session_id) REFERENCES sessions(id)

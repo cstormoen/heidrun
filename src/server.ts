@@ -12,7 +12,7 @@ import {
 function htmlResponse(
 	content: string,
 	isHtmx: boolean,
-	options: { pushUrl?: string; status?: number } = {},
+	options: { pushUrl?: string; status?: number; reswap?: string } = {},
 ): Response {
 	const status = options.status || 200;
 	const headers: Record<string, string> = {
@@ -20,6 +20,9 @@ function htmlResponse(
 	};
 	if (options.pushUrl) {
 		headers["HX-Push-Url"] = options.pushUrl;
+	}
+	if (options.reswap) {
+		headers["HX-Reswap"] = options.reswap;
 	}
 
 	const body = isHtmx ? content : renderBaseLayout(content);
@@ -269,18 +272,22 @@ serve({
 						};
 					}
 					if (note) data.note = note;
-				} else if (type === "racking" || type === "bottling") {
+				} else if (type === "racking" || type === "bottling" || type === "comment") {
 					const legacyData = ((formData.get("data") || "") as string).trim();
 					const finalNote = note || legacyData;
 					if (finalNote) data.note = finalNote;
 				}
 
 				const timestampToUse = parseTimestamp(timestampRaw);
-				DAL.addEvent(sessionId, type, data, timestampToUse);
+				if (type !== "comment" || data.note) {
+					DAL.addEvent(sessionId, type, data, timestampToUse);
+				}
 			}
 
 			const content = renderSessionDetailView(sessionId);
-			return htmlResponse(content, true);
+			return htmlResponse(content, true, {
+				reswap: "innerHTML show:#event-history-title:top focus-scroll:false",
+			});
 		}
 
 		// Sessions: Link unlinked addition event to inventory
@@ -354,7 +361,7 @@ serve({
 						const ph = parseFloat(phStr);
 						if (!isNaN(ph)) newData.ph = ph;
 						if (note && note !== phStr) newData.note = note;
-					} else if (type === "racking" || type === "bottling") {
+					} else if (type === "racking" || type === "bottling" || type === "comment") {
 						const legacyData = ((formData.get("data") || "") as string).trim();
 						const finalNote = note || legacyData;
 						if (finalNote) newData.note = finalNote;
@@ -379,12 +386,16 @@ serve({
 						}
 						if (note) newData.note = note;
 					}
-					DAL.updateEvent(eventId, newData, timestampToUse, type);
+					if (type !== "comment" || newData.note) {
+						DAL.updateEvent(eventId, newData, timestampToUse, type);
+					}
 				}
 			}
 
 			const content = renderSessionDetailView(sessionId);
-			return htmlResponse(content, true);
+			return htmlResponse(content, true, {
+				reswap: "innerHTML show:#event-history-title:top focus-scroll:false",
+			});
 		}
 
 		// Sessions: Delete event

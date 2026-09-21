@@ -135,6 +135,10 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Fermentation Curve");
 		expect(detailHtml).toContain("Fermaid O");
 		expect(detailHtml).toContain("Event History");
+		expect(detailHtml).toContain('id="event-history-title"');
+		expect(detailHtml).toContain(
+			'hx-swap="innerHTML show:#event-history-title:top focus-scroll:false"',
+		);
 		expect(detailHtml).toContain("Ingredients Used");
 		expect(detailHtml).toContain("Log Event");
 		// Ingredients Used should be rendered below Event History
@@ -184,6 +188,29 @@ describe("sessionView module", () => {
 
 		// In-range pH does not render guidance card
 		expect(detailHtml).not.toContain('id="ph-guidance-card"');
+	});
+
+	it("renders session detail with Comment in timeline and modal", () => {
+		const eventsWithComment: Event[] = [
+			...mockEvents,
+			{
+				id: 106,
+				session_id: 1,
+				type: "comment",
+				timestamp: "2026-08-10T14:00:00.000Z",
+				data: { note: "Carboy smelled distinctly of clover honey and citrus" },
+			},
+		];
+
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			eventsWithComment,
+			mockInventory,
+		);
+
+		// Timeline displays comment text and note
+		expect(detailHtml).toContain("Carboy smelled distinctly of clover honey and citrus");
+		expect(detailHtml).toContain('<option value="comment">Comment</option>');
 	});
 
 	it("renders pH guidance card with malic acid adjustment when pH is above 3.8", () => {

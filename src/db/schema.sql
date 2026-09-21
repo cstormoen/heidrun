@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('sg_reading', 'addition', 'racking', 'bottling', 'ph_reading')),
+  type TEXT NOT NULL CHECK (type IN ('sg_reading', 'addition', 'racking', 'bottling', 'ph_reading', 'comment')),
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   data TEXT, -- JSON field for extra details (e.g., {"sg": 1.100}, {"ingredient": "yeast"})
   FOREIGN KEY (session_id) REFERENCES sessions(id)

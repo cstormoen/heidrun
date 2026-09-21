@@ -69,7 +69,7 @@ export function convertUnits(amount: number, fromUnit: string, toUnit: string): 
 export interface Event {
   id: number;
   session_id: number;
-  type: 'sg_reading' | 'addition' | 'racking' | 'bottling' | 'ph_reading';
+  type: 'sg_reading' | 'addition' | 'racking' | 'bottling' | 'ph_reading' | 'comment';
   timestamp: string;
   data: any;
 }

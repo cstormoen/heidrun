@@ -83,8 +83,12 @@ describe("HTTP server smoke integration", () => {
 			headers: { "HX-Request": "true" },
 		});
 		expect(postRes.status).toBe(200);
+		expect(postRes.headers.get("HX-Reswap")).toBe(
+			"innerHTML show:#event-history-title:top focus-scroll:false",
+		);
 		const html = await postRes.text();
 
+		expect(html).toContain('id="event-history-title"');
 		expect(html).toContain("pH Reading");
 		expect(html).toContain("pH 3.62");
 		expect(html).toContain("Test Must pH Integration");
@@ -100,5 +104,67 @@ describe("HTTP server smoke integration", () => {
 			});
 			expect(delRes.status).toBe(200);
 		}
+	});
+
+	it("logs, displays, edits, and validates a comment event", async () => {
+		// Attempting empty note comment should not log
+		const emptyForm = new FormData();
+		emptyForm.append("type", "comment");
+		emptyForm.append("timestamp", "2026-09-18T12:00");
+		emptyForm.append("note", "");
+
+		const emptyRes = await fetch("http://localhost:3000/sessions/1/events", {
+			method: "POST",
+			body: emptyForm,
+			headers: { "HX-Request": "true" },
+		});
+		expect(emptyRes.status).toBe(200);
+
+		// Valid comment
+		const formData = new FormData();
+		formData.append("type", "comment");
+		formData.append("timestamp", "2026-09-18T12:30");
+		formData.append("note", "Degassed mead and noted gentle wildflower aroma");
+
+		const postRes = await fetch("http://localhost:3000/sessions/1/events", {
+			method: "POST",
+			body: formData,
+			headers: { "HX-Request": "true" },
+		});
+		expect(postRes.status).toBe(200);
+		const html = await postRes.text();
+
+		expect(html).toContain("Degassed mead and noted gentle wildflower aroma");
+
+		// Find the event ID to edit
+		const matches = [...html.matchAll(/\/sessions\/1\/events\/(\d+)/g)];
+		expect(matches.length).toBeGreaterThan(0);
+		const eventId = matches[0][1];
+
+		// Edit the comment
+		const editForm = new FormData();
+		editForm.append("id", eventId);
+		editForm.append("type", "comment");
+		editForm.append("timestamp", "2026-09-18T13:00");
+		editForm.append("note", "Updated: Degassed thoroughly, clarity improving");
+
+		const editRes = await fetch("http://localhost:3000/sessions/1/events/edit", {
+			method: "POST",
+			body: editForm,
+			headers: { "HX-Request": "true" },
+		});
+		expect(editRes.status).toBe(200);
+		expect(editRes.headers.get("HX-Reswap")).toBe(
+			"innerHTML show:#event-history-title:top focus-scroll:false",
+		);
+		const editHtml = await editRes.text();
+		expect(editHtml).toContain("Updated: Degassed thoroughly, clarity improving");
+
+		// Clean up
+		const delRes = await fetch(`http://localhost:3000/sessions/1/events/${eventId}`, {
+			method: "DELETE",
+			headers: { "HX-Request": "true" },
+		});
+		expect(delRes.status).toBe(200);
 	});
 });
