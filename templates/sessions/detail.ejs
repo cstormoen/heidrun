@@ -312,7 +312,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 class="card-title text-base-content text-lg flex items-center gap-2">
           <% if (session.is_chemically_stabilized) { %>
-            <span class="text-xl">🍯</span> Backsweetening Guidance (Ettersøting)
+            Backsweetening Guidance (Ettersøting)
           <% } else { %>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
@@ -320,13 +320,6 @@
             Backsweetening Guidance (Locked)
           <% } %>
         </h3>
-        <% if (session.is_chemically_stabilized) { %>
-          <% if (!session.backsweetening_events || session.backsweetening_events.length === 0) { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Unlocked &amp; Safe</span>
-          <% } %>
-        <% } else { %>
-          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Stabilization Required</span>
-        <% } %>
       </div>
 
       <% if (session.is_chemically_stabilized) { %>
@@ -437,7 +430,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 class="card-title text-base-content text-lg flex items-center gap-2">
           <% if (session.is_racked) { %>
-            <span class="text-xl">✨</span> Clarification &amp; Fining Compaction
+            Clarification &amp; Fining Compaction
           <% } else { %>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
@@ -445,23 +438,6 @@
             Clarification &amp; Fining Compaction (Locked)
           <% } %>
         </h3>
-        <% if (session.is_racked) { %>
-          <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
-            <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Step 1: Kieselsol Active</span>
-          <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Step 2: Add Chitosan Now (12–24h)</span>
-          <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
-            <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Step 2: Chitosan Overdue</span>
-          <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
-            <span class="badge badge-info text-white text-xs font-semibold px-2 py-0.5">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
-          <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Sediment Compacted – Safe to Siphon</span>
-          <% } else { %>
-            <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Unlocked &amp; Ready</span>
-          <% } %>
-        <% } else { %>
-          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Racking Recommended</span>
-        <% } %>
       </div>
 
       <p class="text-sm text-base-content mb-3 leading-relaxed">
