@@ -4,7 +4,7 @@
   const startDateStr = formatDateForDisplay(session.start_date);
   const sgDisplay = formatSg(session.current_sg);
 %>
-<div class="card bg-base-100 shadow-sm mb-4 transition-all duration-300 cursor-pointer border border-base-300 hover:border-primary hover:shadow-md hover:-translate-y-1" hx-get="/sessions/<%= session.id %>" hx-target="#main-content" hx-push-url="true">
+<div class="card bg-base-100 shadow-sm mb-4 transition-all duration-300 cursor-pointer border border-base-300 hover:shadow-lg" hx-get="/sessions/<%= session.id %>" hx-target="#main-content" hx-push-url="true">
   <div class="card-body">
     <h2 class="card-title text-base-content"><%= session.name %></h2>
     <div class="flex gap-2 mb-2 items-center flex-wrap">
