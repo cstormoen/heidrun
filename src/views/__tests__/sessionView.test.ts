@@ -151,6 +151,17 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain("Day 15");
 		// Not stabilized by default, should render locked guidance
 		expect(detailHtml).toContain("Backsweetening Guidance (Locked)");
+
+		// Edit button is in timeline
+		expect(detailHtml).toContain('title="Edit Event"');
+
+		// Delete button is inside the event modal, not duplicated per timeline item
+		const deleteMatches = [...detailHtml.matchAll(/title="Delete Event"/g)];
+		expect(deleteMatches.length).toBe(1);
+		expect(detailHtml).toContain('id="event-delete-btn"');
+		expect(detailHtml).toMatch(
+			/<dialog id="event_modal"[\s\S]*?id="event-delete-btn"/,
+		);
 	});
 
 	it("renders session detail with pH reading in stats, timeline, and modal", () => {
@@ -354,6 +365,7 @@ describe("sessionView module", () => {
 		);
 		expect(detailHtml).toContain("Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.");
 		expect(detailHtml).toContain("Degas and aerate the batch daily before reaching this break");
+		expect(detailHtml).toContain("Target threshold");
 	});
 
 	it("renders Next Steps card with Stop Aerating warning past 1/3 break", () => {
@@ -386,6 +398,9 @@ describe("sessionView module", () => {
 		);
 		expect(detailHtml).toContain("Past 1/3 Sugar Break (1.073): Stop Aerating!");
 		expect(detailHtml).toContain("Stop aerating once past the 1/3 break to prevent oxidation during aging");
+		expect(detailHtml).toContain('aria-label="Break reached"');
+		expect(detailHtml).toContain("text-warning");
+		expect(detailHtml).not.toMatch(/<div class="stat-desc[^>]*">\s*Break reached\s*<\/div>/);
 	});
 
 	it("renders actionable Next Step alert with contextual gravity values matching specification", () => {

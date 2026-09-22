@@ -62,10 +62,19 @@
     </div>
     <div class="stat place-items-center">
       <div class="stat-title text-pollen">1/3 Sugar Break</div>
-      <div class="stat-value text-2xl text-secondary"><%= sugarBreakFormatted %></div>
+      <div class="stat-value text-2xl text-secondary flex flex-row items-center gap-1">
+        <span><%= sugarBreakFormatted %></span>
+        <% if (session.is_sugar_break_reached) { %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" title="Break reached" aria-label="Break reached">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        <% } %>        
+      </div>
       <% if (session.original_sg) { %>
-        <div class="stat-desc text-xs <%= session.is_sugar_break_reached ? 'text-warning font-semibold' : 'text-pollen' %>">
-          <%= session.is_sugar_break_reached ? 'Break reached' : 'Target threshold' %>
+        <div class="stat-desc text-xs <%= session.is_sugar_break_reached ? 'text-warning font-semibold flex items-center justify-center' : 'text-pollen' %>">
+          <% if (!session.is_sugar_break_reached) { %>
+            Target threshold
+          <% } %>
         </div>
       <% } %>
     </div>
@@ -77,7 +86,6 @@
       <div class="stat place-items-center" title="Estimated initial batch volume derived from logged honey/sugars and Original Gravity (~300 gravity points per kg/L). Excludes racking losses.">
         <div class="stat-title text-pollen">Est. Volume</div>
         <div class="stat-value text-2xl text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</div>
-        <div class="stat-desc text-xs text-pollen">From honey &amp; OG</div>
       </div>
     <% } %>
     <% if (session.current_ph !== undefined) { %>
@@ -661,11 +669,8 @@
                   <div class="text-sm text-base-content mt-0.5 leading-snug"><%= e.data.note %></div>
                 <% } %>
               </div>
-              <button class="btn btn-ghost btn-xs text-primary ml-auto" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Edit Event">
+              <button class="btn btn-ghost btn-xs text-primary ml-auto" data-event-id="<%= e.id %>" data-delete-url="/sessions/<%= session.id %>/events/<%= e.id %>" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Edit Event">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
-              </button>
-              <button class="btn btn-ghost btn-xs text-error ml-1" hx-delete="/sessions/<%= session.id %>/events/<%= e.id %>" hx-target="#main-content" hx-confirm="Are you sure you want to delete this event?" title="Delete Event">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
               </button>
             </div>
             <% if (index < arr.length - 1) { %><hr/><% } %>
@@ -758,9 +763,17 @@
           <input type="text" name="note" id="event-note-input" class="input input-bordered w-full" placeholder="e.g. Additional notes or observations" />
         </div>
 
-        <div class="modal-action">
-          <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Cancel</button>
-          <button type="submit" id="event-submit-btn" class="btn btn-primary">Log Event</button>
+        <div class="modal-action flex justify-between items-center w-full">
+          <div>
+            <button type="button" id="event-delete-btn" class="btn btn-error gap-1.5 hidden" hx-target="#main-content" hx-swap="innerHTML show:#event-history-title:top focus-scroll:false" hx-confirm="Are you sure you want to delete this event?" hx-params="none" title="Delete Event">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+              Delete
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Cancel</button>
+            <button type="submit" id="event-submit-btn" class="btn btn-primary">Log Event</button>
+          </div>
         </div>
       </form>
     </div>
@@ -911,6 +924,12 @@
       document.getElementById('event-modal-title').innerText = "Log Event";
       document.getElementById('event-submit-btn').innerText = "Log Event";
 
+      const deleteBtn = document.getElementById('event-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.classList.add('hidden');
+        deleteBtn.removeAttribute('hx-delete');
+      }
+
       form.setAttribute('hx-post', '/sessions/<%= session.id %>/events');
       htmx.process(form);
 
@@ -938,6 +957,13 @@
       const form = document.getElementById('event-form');
       document.getElementById('event-modal-title').innerText = "Edit Event";
       document.getElementById('event-submit-btn').innerText = "Save Changes";
+
+      const deleteBtn = document.getElementById('event-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.setAttribute('hx-delete', '/sessions/<%= session.id %>/events/' + event.id);
+        deleteBtn.classList.remove('hidden');
+        htmx.process(deleteBtn);
+      }
 
       form.setAttribute('hx-post', '/sessions/<%= session.id %>/events/edit');
       htmx.process(form);
