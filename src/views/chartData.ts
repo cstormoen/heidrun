@@ -45,6 +45,8 @@ export function buildFermentationChartData(
 				const abv = calculateABV(og, sg);
 				abvData.push({ x: day, y: Number(abv.toFixed(2)) });
 			}
+		} else if (e.type === "comment") {
+			continue;
 		} else {
 			const config = EVENT_ANNOTATION_CONFIG[e.type] || {
 				label: e.type,

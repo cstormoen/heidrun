@@ -79,8 +79,6 @@
         <div class="stat-value text-2xl <%= (session.current_ph < 3.2 || session.current_ph > 3.8) ? 'text-warning' : 'text-secondary' %>"><%= currentPhFormatted %></div>
         <% if (session.current_ph < 3.2 || session.current_ph > 3.8) { %>
           <div class="stat-desc text-xs text-warning font-semibold">Outside target (3.2–3.8)</div>
-        <% } else { %>
-          <div class="stat-desc text-xs text-success font-semibold">Optimal (3.2–3.8)</div>
         <% } %>
       </div>
     <% } %>
@@ -90,20 +88,19 @@
   <%- include('../partials/nextSteps', { session, currentSgFormatted, sugarBreakFormatted }) %>
 
   <% if (session.current_ph !== undefined && (session.current_ph < 3.2 || session.current_ph > 3.8)) { %>
-    <!-- pH Range Guidance Card -->
-    <div class="card bg-base-100 border border-warning/50 shadow-sm mb-8" id="ph-guidance-card">
-      <div class="card-body p-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <h3 class="card-title text-base-content text-lg flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-            </svg>
-            pH Advisory: Outside Optimal Range
-          </h3>
-          <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">
-            <%= session.current_ph > 3.8 ? 'pH High (> 3.8)' : 'pH Low (< 3.2)' %>
-          </span>
-        </div>
+    <details class="collapse collapse-arrow bg-base-100 border border-warning/50 shadow-sm mb-8" id="ph-guidance-card" open>
+      <summary class="collapse-title text-base-content text-lg font-bold flex flex-wrap items-center justify-between gap-2 cursor-pointer select-none pr-12">
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+          </svg>
+          pH Advisory: Outside Optimal Range
+        </span>
+        <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5 mr-2">
+          <%= session.current_ph > 3.8 ? 'pH High (> 3.8)' : 'pH Low (< 3.2)' %>
+        </span>
+      </summary>
+      <div class="collapse-content">
 
         <div class="alert alert-warning bg-warning/15 border border-warning/30 rounded-lg p-3.5 mb-4 flex items-start gap-2.5">
           <span class="text-xl leading-none">⚠️</span>
@@ -218,19 +215,21 @@
           </div>
         <% } %>
       </div>
-    </div>
+    </details>
   <% } %>
 
 
   <% if (chartBundle && chartBundle.sgData && chartBundle.sgData.length > 0) { %>
-    <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
-      <div class="card-body p-4">
-        <h3 class="card-title text-base-content text-lg mb-2">Fermentation Curve</h3>
-        <div class="w-full relative" style="height: 300px;">
+    <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="fermentation-curve-card" open ontoggle="if (this.open && window.fermentationChartInstance) { window.fermentationChartInstance.resize(); }">
+      <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
+        Fermentation Curve
+      </summary>
+      <div class="collapse-content">
+        <div class="w-full relative pt-2" style="height: 300px;">
           <canvas id="fermentationChart"></canvas>
         </div>
       </div>
-    </div>
+    </details>
     <script>
       setTimeout(() => {
         const ctx = document.getElementById('fermentationChart');
@@ -307,20 +306,20 @@
   <% } %>
 
   <!-- Backsweetening Guidance Card -->
-  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="backsweetening-guidance-card">
-    <div class="card-body p-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <h3 class="card-title text-base-content text-lg flex items-center gap-2">
-          <% if (session.is_chemically_stabilized) { %>
-            Backsweetening Guidance (Ettersøting)
-          <% } else { %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-            </svg>
-            Backsweetening Guidance (Locked)
-          <% } %>
-        </h3>
-      </div>
+  <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="backsweetening-guidance-card" open>
+    <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
+      <% if (session.is_chemically_stabilized) { %>
+        <span>Backsweetening Guidance (Ettersøting)</span>
+      <% } else { %>
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+          </svg>
+          Backsweetening Guidance (Locked)
+        </span>
+      <% } %>
+    </summary>
+    <div class="collapse-content">
 
       <% if (session.is_chemically_stabilized) { %>
         <% if (session.backsweetening_events && session.backsweetening_events.length > 0) { %>
@@ -422,23 +421,23 @@
         </div>
       <% } %>
     </div>
-  </div>
+  </details>
 
   <!-- Clarification & Fining Compaction Countdown Card -->
-  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="clarification-fining-card">
-    <div class="card-body p-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <h3 class="card-title text-base-content text-lg flex items-center gap-2">
-          <% if (session.is_racked) { %>
-            Clarification &amp; Fining Compaction
-          <% } else { %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-            </svg>
-            Clarification &amp; Fining Compaction (Locked)
-          <% } %>
-        </h3>
-      </div>
+  <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="clarification-fining-card" open>
+    <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
+      <% if (session.is_racked) { %>
+        <span>Clarification &amp; Fining Compaction</span>
+      <% } else { %>
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+          </svg>
+          Clarification &amp; Fining Compaction (Locked)
+        </span>
+      <% } %>
+    </summary>
+    <div class="collapse-content">
 
       <p class="text-sm text-base-content mb-3 leading-relaxed">
         <% if (!session.is_racked) { %>
@@ -594,7 +593,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </details>
 
   <div class="flex items-center justify-between mb-4">
     <h3 id="event-history-title" class="text-xl font-bold text-base-content scroll-mt-4">Event History</h3>
@@ -1098,5 +1097,26 @@
       document.getElementById('unit-select').value = 'ml';
       document.getElementById('event-note-input').value = 'Fining Step 2: Chitosan [+] added; starts 7–14 day sediment compaction countdown';
     }
+
+    // Restore collapsible card open/closed states from localStorage and attach listeners
+    (function initCollapsibleCards() {
+      document.querySelectorAll('details.collapse[id]').forEach(function(el) {
+        var key = 'heidrun_collapse_' + el.id;
+        try {
+          var saved = localStorage.getItem(key);
+          if (saved !== null) {
+            el.open = saved === 'true';
+          }
+          el.addEventListener('toggle', function() {
+            localStorage.setItem(key, el.open ? 'true' : 'false');
+            if (el.open && el.id === 'fermentation-curve-card' && window.fermentationChartInstance) {
+              window.fermentationChartInstance.resize();
+            }
+          });
+        } catch (e) {
+          // Ignore localStorage errors (e.g. private browsing restrictions)
+        }
+      });
+    })();
   </script>
 </div>

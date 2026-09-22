@@ -174,7 +174,7 @@ describe("sessionView module", () => {
 		// Current pH in stats bar
 		expect(detailHtml).toContain("Current pH");
 		expect(detailHtml).toContain("3.65");
-		expect(detailHtml).toContain("Optimal (3.2–3.8)");
+		expect(detailHtml).not.toContain("Optimal (3.2–3.8)");
 
 		// Timeline shows pH Reading
 		expect(detailHtml).toContain("pH Reading");
@@ -513,5 +513,33 @@ describe("sessionView module", () => {
 		};
 		const cardHtml2 = renderSessionCard(sessionCompacted);
 		expect(cardHtml2).toContain("Sediment Compacted");
+	});
+
+	it("renders collapsible cards (Next Steps, Fermentation Curve) using details and collapse classes", () => {
+		const detailHtml = renderSessionDetail(
+			mockSession,
+			mockEvents,
+			mockInventory,
+		);
+
+		// Next Steps card is collapsible
+		expect(detailHtml).toContain('<details class="collapse collapse-arrow');
+		expect(detailHtml).toContain('id="next-steps-card"');
+		expect(detailHtml).toContain('<summary class="collapse-title');
+		expect(detailHtml).toContain('Next Steps');
+		expect(detailHtml).toContain('<div class="collapse-content">');
+
+		// Fermentation Curve card is collapsible
+		expect(detailHtml).toContain('id="fermentation-curve-card"');
+		expect(detailHtml).toContain('Fermentation Curve');
+
+		// Backsweetening Guidance is collapsible
+		expect(detailHtml).toContain('id="backsweetening-guidance-card"');
+
+		// Clarification & Fining is collapsible
+		expect(detailHtml).toContain('id="clarification-fining-card"');
+
+		// Ingredients Used is collapsible
+		expect(detailHtml).toContain('id="ingredients-used-card"');
 	});
 });

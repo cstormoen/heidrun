@@ -41,7 +41,6 @@ export const EVENT_ANNOTATION_CONFIG: Record<
 	addition: { label: "Addition", color: "#F4C430" }, // Ferment Gold
 	racking: { label: "Racking", color: "#7A4A3A" }, // Oak Barrel
 	bottling: { label: "Bottled", color: "#4E795B" }, // Botanical Sage
-	comment: { label: "Comment", color: "#6B655B" }, // Pollen / Slate
 };
 
 export const DEFAULT_ANNOTATION_COLOR = "#8A8377"; // Planned / Neutral

@@ -118,5 +118,37 @@ describe("chartData", () => {
 			expect(result.annotations[0].label.backgroundColor).toBe("#3E7B7D");
 			expect(result.annotations[0].xMin).toBe(1);
 		});
+
+		it("does not include comment events in chart annotations", () => {
+			const startDate = "2026-09-01T10:00:00Z";
+			const events: Event[] = [
+				{
+					id: 1,
+					session_id: 10,
+					type: "sg_reading",
+					timestamp: "2026-09-01T10:00:00Z",
+					data: { sg: 1.11 },
+				},
+				{
+					id: 2,
+					session_id: 10,
+					type: "comment",
+					timestamp: "2026-09-03T10:00:00Z",
+					data: { note: "Smells wonderful" },
+				},
+				{
+					id: 3,
+					session_id: 10,
+					type: "bottling",
+					timestamp: "2026-09-10T10:00:00Z",
+					data: {},
+				},
+			];
+
+			const result = buildFermentationChartData(events, startDate);
+			// Only bottling should be present, comment must be excluded
+			expect(result.annotations.length).toBe(1);
+			expect(result.annotations[0].label.content).toBe("Bottled");
+		});
 	});
 });

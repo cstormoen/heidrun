@@ -1,10 +1,8 @@
-<div class="card bg-base-100 border border-base-300 shadow-sm mb-8" id="next-steps-card">
-  <div class="card-body p-5">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-      <h3 class="card-title text-base-content text-lg flex items-center gap-2">
-        Next Steps
-      </h3>
-    </div>
+<details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="next-steps-card" open>
+  <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
+    Next Steps
+  </summary>
+  <div class="collapse-content">
 
     <% if (session.status === 'Primary Fermentation') { %>
       <% if (!session.is_sugar_break_reached) { %>
@@ -203,4 +201,4 @@
       </p>
     <% } %>
   </div>
-</div>
+</details>

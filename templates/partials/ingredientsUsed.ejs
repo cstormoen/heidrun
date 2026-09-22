@@ -4,10 +4,12 @@
 %>
 <% if (hasLinked || hasUnlinked) { %>
   <div class="pb-6">
-  <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
-    <div class="card-body p-4">
-      <h3 class="card-title text-base-content text-lg mb-2">Ingredients Used</h3>
-      <ul class="list-disc list-inside text-sm text-base-content mb-2">
+  <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="ingredients-used-card" open>
+    <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
+      Ingredients Used
+    </summary>
+    <div class="collapse-content">
+      <ul class="list-disc list-inside text-sm text-base-content mb-2 pt-2">
         <% if (hasLinked) { %>
           <% usage.linkedGroups.forEach(function(group) { %>
             <li>
@@ -62,6 +64,6 @@
         <div class="text-sm font-bold text-secondary mt-2 border-t border-base-200 pt-2">Estimated Batch Cost: <%= usage.totalCost.toFixed(2) %> NOK</div>
       <% } %>
     </div>
-  </div>    
+  </details>    
   </div>
 <% } %>
