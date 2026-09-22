@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	calculateEstimatedBatchVolume,
 	checkChemicalStabilization,
 	checkGravityStability,
 	deriveSessionState,
@@ -476,5 +477,78 @@ describe("Backsweetening Tracking & SG Delta Approximation", () => {
 		// Estimated SG impact (~0.011 based on 358g in ~9L batch)
 		expect(bs.estimated_sg_delta).toBeGreaterThan(0.008);
 		expect(bs.estimated_sg_delta).toBeLessThan(0.015);
+
+		// Estimated batch volume derived from 3.3 kg honey and 1.110 OG
+		expect(derived.estimated_batch_volume).toBe(9.0);
+	});
+});
+
+describe("Batch Volume Calculation (calculateEstimatedBatchVolume)", () => {
+	const mockPantry: InventoryItem[] = [
+		{ id: 1, name: "Wildflower Honey", category: "Honey & Sugars", quantity_on_hand: 5, unit: "kg" },
+	];
+
+	it("calculates volume accurately based on honey mass and OG", () => {
+		const events: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { inventory_item_id: 1, quantity_used: 3.0, unit: "kg" },
+			},
+		];
+		// (3.0 kg * 300) / 95 = 9.47 -> 9.5 L
+		const vol = calculateEstimatedBatchVolume(events, mockPantry, 1.095);
+		expect(vol).toBe(9.5);
+	});
+
+	it("returns undefined if OG is missing or too low", () => {
+		const events: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { inventory_item_id: 1, quantity_used: 3.0, unit: "kg" },
+			},
+		];
+		expect(calculateEstimatedBatchVolume(events, mockPantry, undefined)).toBeUndefined();
+		expect(calculateEstimatedBatchVolume(events, mockPantry, 1.005)).toBeUndefined();
+	});
+
+	it("returns undefined if no honey or sugar was added", () => {
+		const events: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.100 },
+			},
+		];
+		expect(calculateEstimatedBatchVolume(events, mockPantry, 1.100)).toBeUndefined();
+	});
+
+	it("excludes sugar additions logged after stabilization", () => {
+		const stabilizationTime = new Date("2026-08-15T12:00:00.000Z").getTime();
+		const events: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { inventory_item_id: 1, quantity_used: 3.0, unit: "kg" },
+			},
+			{
+				id: 2,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-20T12:00:00.000Z", // After stabilization
+				data: { inventory_item_id: 1, quantity_used: 1.0, unit: "kg" },
+			},
+		];
+		const vol = calculateEstimatedBatchVolume(events, mockPantry, 1.095, stabilizationTime);
+		expect(vol).toBe(9.5); // Still calculated on 3.0 kg, not 4.0 kg
 	});
 });

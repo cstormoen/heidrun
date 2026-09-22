@@ -91,6 +91,7 @@ export interface Session {
   current_ph?: number;
   is_ph_out_of_range?: boolean;
   original_sg?: number;
+  estimated_batch_volume?: number;
   sugar_break_sg?: number;
   is_sugar_break_reached?: boolean;
   abv?: number;
@@ -354,15 +355,13 @@ export function checkChemicalStabilization(events: Event[], inventoryList?: Inve
 }
 
 /**
- * Finds backsweetening addition events logged after chemical stabilization and calculates measured & estimated SG changes
+ * Returns timestamp of chemical stabilization (when both sulfite and sorbate were added), or null if not stabilized
  */
-export function getBacksweeteningEvents(
+export function getStabilizationTime(
   events: Event[],
-  inventoryList?: InventoryItem[],
-  og?: number,
-): BacksweeteningEvent[] {
+  inventoryList?: InventoryItem[]
+): number | null {
   const invMap = buildInventoryMap(inventoryList);
-
   const isSulfiteText = (text: string) => matchesAny(text, SULFITE_PATTERNS);
   const isSorbateText = (text: string) => matchesAny(text, SORBATE_PATTERNS);
 
@@ -383,35 +382,73 @@ export function getBacksweeteningEvents(
   }
 
   if (lastSulfiteTime === null || lastSorbateTime === null) {
-    return [];
+    return null;
   }
 
-  const stabilizationTime = Math.max(lastSulfiteTime, lastSorbateTime);
+  return Math.max(lastSulfiteTime, lastSorbateTime);
+}
 
-  // Approximate initial batch volume in Liters based on honey added vs target OG
+/**
+ * Calculates estimated initial batch volume in Liters based on honey/sugars added vs Original Gravity.
+ * Rule of thumb: 1 kg honey contributes ~300 gravity points per liter of must.
+ */
+export function calculateEstimatedBatchVolume(
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  og?: number,
+  upToTimestamp?: number | null
+): number | undefined {
+  if (!og || og <= 1.01) return undefined;
+
+  const invMap = buildInventoryMap(inventoryList);
   let initialSugarGrams = 0;
+
   for (const e of events) {
     if (e.type !== "addition") continue;
     const t = new Date(e.timestamp).getTime();
-    if (t < stabilizationTime) {
-      const invItem = e.data?.inventory_item_id ? invMap.get(e.data.inventory_item_id) : undefined;
-      const isSugar =
-        invItem?.category === "Honey & Sugars" ||
-        /honning|honey|sugar|sukker/i.test(invItem?.name || e.data?.ingredient || "");
-      if (isSugar && e.data?.quantity_used) {
-        initialSugarGrams += convertUnits(e.data.quantity_used, e.data.unit || invItem?.unit || "g", "g");
-      }
+    if (upToTimestamp !== undefined && upToTimestamp !== null && t >= upToTimestamp) {
+      continue;
+    }
+
+    const invItem = e.data?.inventory_item_id ? invMap.get(e.data.inventory_item_id) : undefined;
+    const isSugar =
+      invItem?.category === "Honey & Sugars" ||
+      /honning|honey|sugar|sukker/i.test(invItem?.name || e.data?.ingredient || "");
+    if (isSugar && e.data?.quantity_used) {
+      initialSugarGrams += convertUnits(e.data.quantity_used, e.data.unit || invItem?.unit || "g", "g");
     }
   }
 
-  let batchVolumeLiters = 10.0;
-  if (og && og > 1.01 && initialSugarGrams > 0) {
-    const ogPoints = (og - 1) * 1000;
-    const calculatedVol = (initialSugarGrams / 1000 * 300) / ogPoints;
-    if (calculatedVol >= 2 && calculatedVol <= 60) {
-      batchVolumeLiters = calculatedVol;
-    }
+  if (initialSugarGrams <= 0) return undefined;
+
+  const ogPoints = (og - 1) * 1000;
+  const calculatedVol = (initialSugarGrams / 1000 * 300) / ogPoints;
+  if (calculatedVol >= 2 && calculatedVol <= 60) {
+    return Number(calculatedVol.toFixed(1));
   }
+
+  return undefined;
+}
+
+/**
+ * Finds backsweetening addition events logged after chemical stabilization and calculates measured & estimated SG changes
+ */
+export function getBacksweeteningEvents(
+  events: Event[],
+  inventoryList?: InventoryItem[],
+  og?: number,
+): BacksweeteningEvent[] {
+  const stabilizationTime = getStabilizationTime(events, inventoryList);
+  if (stabilizationTime === null) {
+    return [];
+  }
+
+  const invMap = buildInventoryMap(inventoryList);
+  const isSulfiteText = (text: string) => matchesAny(text, SULFITE_PATTERNS);
+  const isSorbateText = (text: string) => matchesAny(text, SORBATE_PATTERNS);
+
+  const estimatedVol = calculateEstimatedBatchVolume(events, inventoryList, og, stabilizationTime);
+  const batchVolumeLiters = estimatedVol ?? 10.0;
 
   // Sorted SG readings
   const sgReadings = events
@@ -706,6 +743,15 @@ function deriveSessionMetrics(
 
   const isGravityStable = checkGravityStability(sortedEvents);
   const isChemicallyStabilized = checkChemicalStabilization(sortedEvents, inventoryList);
+  const stabilizationTime = isChemicallyStabilized
+    ? getStabilizationTime(sortedEvents, inventoryList)
+    : null;
+  const estimatedBatchVolume = calculateEstimatedBatchVolume(
+    sortedEvents,
+    inventoryList,
+    og,
+    stabilizationTime
+  );
   const backsweeteningEvents = isChemicallyStabilized
     ? getBacksweeteningEvents(sortedEvents, inventoryList, og)
     : [];
@@ -719,6 +765,7 @@ function deriveSessionMetrics(
     sortedEvents,
     status,
     og,
+    estimatedBatchVolume,
     currentSg,
     currentPh,
     isRacked,
@@ -742,6 +789,7 @@ export function deriveSessionState(
     sortedEvents,
     status,
     og,
+    estimatedBatchVolume,
     currentSg,
     currentPh,
     isRacked,
@@ -785,6 +833,7 @@ export function deriveSessionState(
     backsweetening_events: backsweeteningEvents,
     fining_state: finingState,
     original_sg: og,
+    estimated_batch_volume: estimatedBatchVolume,
     current_sg: currentSg,
     current_ph: currentPh,
     is_ph_out_of_range: currentPh !== undefined ? currentPh < OPTIMAL_PH_MIN || currentPh > OPTIMAL_PH_MAX : undefined,

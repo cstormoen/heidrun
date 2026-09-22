@@ -73,6 +73,13 @@
       <div class="stat-title text-pollen">Calculated ABV</div>
       <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
     </div>
+    <% if (session.estimated_batch_volume !== undefined) { %>
+      <div class="stat place-items-center" title="Estimated initial batch volume derived from logged honey/sugars and Original Gravity (~300 gravity points per kg/L). Excludes racking losses.">
+        <div class="stat-title text-pollen">Est. Volume</div>
+        <div class="stat-value text-2xl text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</div>
+        <div class="stat-desc text-xs text-pollen">From honey &amp; OG</div>
+      </div>
+    <% } %>
     <% if (session.current_ph !== undefined) { %>
       <div class="stat place-items-center">
         <div class="stat-title text-pollen">Current pH</div>
@@ -352,7 +359,7 @@
                       </span>
                     <% } %>
                     <% if (b.estimated_sg_delta !== undefined) { %>
-                      <span class="text-pollen font-medium">
+                      <span class="text-pollen font-medium" title="Theoretical increase based on sweetener quantity and estimated initial batch volume (~<%= (session.estimated_batch_volume || 10).toFixed(1) %> L)">
                         Approx. SG Increase: <strong class="text-secondary">+<%= b.estimated_sg_delta.toFixed(3) %></strong>
                       </span>
                     <% } %>
@@ -388,7 +395,10 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
           <div class="text-xs text-pollen leading-snug">
-            💡 <strong>Dosage tip:</strong> Adding ~35 g honey per 1 L of must increases specific gravity by approximately +0.010.
+            <div>💡 <strong>Dosage tip:</strong> Adding ~35 g honey per 1 L of must increases specific gravity by approximately +0.010.</div>
+            <% if (session.estimated_batch_volume !== undefined) { %>
+              <div class="text-base-content/70 mt-0.5">Calculated batch volume: <strong class="text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</strong> (initial must size; actual volume may be lower due to racking losses and sampling).</div>
+            <% } %>
           </div>
           <button type="button" class="btn btn-sm btn-primary gap-1" onclick="openBacksweetenModal()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -447,29 +457,29 @@
         <% } %>
       </p>
 
+      <p class="text-sm text-base-content mb-3 leading-relaxed">
+        Cold crashing the carboy (2–4°C) accelerates sediment bed compaction and ensures a tight, disturbance-resistant cake.
+      </p>
+
       <!-- Two-Component Schedule Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <!-- Step 1: Kieselsol [-] -->
         <div class="bg-base-200/60 rounded-lg p-3.5 border border-base-300">
           <div class="flex items-center justify-between mb-1">
             <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
-              <span class="badge badge-xs <%= session.fining_state && session.fining_state.kieselsol_event ? 'badge-success' : 'badge-ghost' %>">1</span>
+              <span class="badge badge-xs <%= session.fining_state && session.fining_state.kieselsol_event ? 'badge-success' : 'badge-pollen' %>">1</span>
               Component 1: Kieselsol [-]
             </div>
-            <% if (session.fining_state && session.fining_state.kieselsol_event) { %>
-              <span class="text-xs text-success font-semibold">✓ Added</span>
-            <% } else { %>
-              <span class="text-xs text-pollen font-medium">Pending</span>
-            <% } %>
           </div>
           <div class="text-xs text-pollen leading-snug">
             Negatively charged silica sol binds positively charged yeast proteins. Disperses through the mead over 12–24 hours.
           </div>
           <% if (session.fining_state && session.fining_state.kieselsol_time) { %>
-            <div class="text-xs text-secondary mt-2 font-medium">
-              Logged: <%= formatDateTimeForDisplay(session.fining_state.kieselsol_time) %>
-              (<%= session.fining_state.hours_since_kieselsol !== undefined ? session.fining_state.hours_since_kieselsol + 'h elapsed' : '' %>)
+            <div class="text-xs text-success mt-2 font-medium">
+              ✓ Added <%= formatDateTimeForDisplay(session.fining_state.kieselsol_time) %>
             </div>
+            <% } else { %>
+              <div class="text-xs text-pollen font-medium">Pending</div>            
           <% } %>
         </div>
 
@@ -477,25 +487,21 @@
         <div class="bg-base-200/60 rounded-lg p-3.5 border border-base-300">
           <div class="flex items-center justify-between mb-1">
             <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
-              <span class="badge badge-xs <%= session.fining_state && session.fining_state.chitosan_event ? 'badge-success' : 'badge-ghost' %>">2</span>
+              <span class="badge badge-xs <%= session.fining_state && session.fining_state.chitosan_event ? 'badge-success' : 'badge-pollen' %>">2</span>
               Component 2: Chitosan [+]
             </div>
-            <% if (session.fining_state && session.fining_state.chitosan_event) { %>
-              <span class="text-xs text-success font-semibold">✓ Added</span>
-            <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
+            <% if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
               <span class="text-xs text-success font-semibold">Ready to Add!</span>
             <% } else if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
               <span class="text-xs text-warning font-semibold">Wait <%= session.fining_state.hours_until_chitosan_window %>h</span>
-            <% } else { %>
-              <span class="text-xs text-pollen font-medium">12–24h After Step 1</span>
             <% } %>
           </div>
           <div class="text-xs text-pollen leading-snug">
             Positively charged polymer neutralizes remaining charges and creates heavy flocs that precipitate rapidly to the bottom.
           </div>
           <% if (session.fining_state && session.fining_state.chitosan_time) { %>
-            <div class="text-xs text-secondary mt-2 font-medium">
-              Logged: <%= formatDateTimeForDisplay(session.fining_state.chitosan_time) %>
+            <div class="text-xs text-success mt-2 font-medium">
+              ✓ Added <%= formatDateTimeForDisplay(session.fining_state.chitosan_time) %>
             </div>
           <% } %>
         </div>
@@ -506,7 +512,7 @@
         <div class="bg-base-200/80 rounded-lg p-4 border border-base-300 mb-4" id="sediment-compaction-timer">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h4 class="font-bold text-sm text-base-content flex items-center gap-1.5">
-              <span>⏱️</span> Sediment Bed Compaction Timer (<em>Bunnfall-komprimering</em>)
+              Sediment Bed Compaction Timer (<em>Bunnfall-komprimering</em>)
             </h4>
             <% if (session.fining_state.safe_to_siphon) { %>
               <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Safe to Siphon into Bottles</span>
@@ -546,12 +552,12 @@
             <progress class="progress progress-secondary w-full" value="<%= session.fining_state.compaction_progress_pct %>" max="100"></progress>
           </div>
 
-          <div class="text-xs leading-relaxed p-2.5 rounded bg-base-100/70 border border-base-300">
+          <div class="text-xs leading-relaxed">
             <% if (session.fining_state.sediment_phase === 'loose') { %>
               <span class="text-warning font-semibold">⚠️ Days 0–6 (Loose Bed):</span>
               The sediment bed is fluffy and loose. The slightest movement or siphoning will draw haze into the pour. Keep the vessel stationary.
             <% } else if (session.fining_state.sediment_phase === 'compacting') { %>
-              <span class="text-info font-semibold">ℹ️ Days 7–13 (Compacting):</span>
+              <span class="font-semibold">Days 7–13 (Compacting):</span>
               The sediment bed is compressing into a tighter layer. For maximum crystal clarity and haze-free pouring, wait until Day 14 for the sediment bed to reach full density.
             <% } else { %>
               <span class="text-success font-semibold">✓ Day 14+ (Compacted):</span>
@@ -562,9 +568,6 @@
       <% } %>
 
       <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-base-300/80">
-        <div class="text-xs text-pollen">
-          💡 <strong>Compaction Tip:</strong> Cold crashing the carboy (2–4°C) accelerates sediment bed compaction and ensures a tight, disturbance-resistant cake.
-        </div>
         <div class="flex gap-2 flex-wrap">
           <% if (!session.is_racked) { %>
             <button type="button" class="btn btn-sm btn-warning gap-1" onclick="document.getElementById('event-type-select').value='racking'; openAddEventModal();">

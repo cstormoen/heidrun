@@ -542,4 +542,66 @@ describe("sessionView module", () => {
 		// Ingredients Used is collapsible
 		expect(detailHtml).toContain('id="ingredients-used-card"');
 	});
+
+	it("renders Est. Volume stat and backsweetening batch volume when honey and OG are logged", () => {
+		const honeyPantry: InventoryItem[] = [
+			{
+				id: 1,
+				name: "Wildflower Honey",
+				category: "Honey & Sugars",
+				quantity_on_hand: 10,
+				unit: "kg",
+			},
+			{
+				id: 2,
+				name: "Campden",
+				category: "Nutrients & Additives",
+				quantity_on_hand: 50,
+				unit: "g",
+			},
+			{
+				id: 3,
+				name: "Sorbistat",
+				category: "Nutrients & Additives",
+				quantity_on_hand: 50,
+				unit: "g",
+			},
+		];
+
+		const batchEvents: Event[] = [
+			{
+				id: 1,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-01T10:00:00.000Z",
+				data: { inventory_item_id: 1, quantity_used: 3.3, unit: "kg" },
+			},
+			{
+				id: 2,
+				session_id: 1,
+				type: "sg_reading",
+				timestamp: "2026-08-01T12:00:00.000Z",
+				data: { sg: 1.110 },
+			},
+			{
+				id: 3,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-20T12:00:00.000Z",
+				data: { inventory_item_id: 2, quantity_used: 1, unit: "g" },
+			},
+			{
+				id: 4,
+				session_id: 1,
+				type: "addition",
+				timestamp: "2026-08-20T12:05:00.000Z",
+				data: { inventory_item_id: 3, quantity_used: 2, unit: "g" },
+			},
+		];
+
+		const html = renderSessionDetail(mockSession, batchEvents, honeyPantry);
+		expect(html).toContain("Est. Volume");
+		expect(html).toContain("~9.0 L");
+		expect(html).toContain("Calculated batch volume: <strong class=\"text-secondary\">~9.0 L</strong>");
+	});
 });
