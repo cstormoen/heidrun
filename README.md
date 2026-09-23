@@ -7,8 +7,7 @@
 - **Batch Tracking**: Log and monitor your mead batches from must to bottling.
 - **Timeline Visualization**: Chronological sorting and tracking of brewing events.
 - **ABV Calculator**: Built-in math for accurate Alcohol By Volume calculations.
-- **Interactive Charts**: Visual insights into your brewing data using **Chart.js**.
-- **Modern UI**: Styled with **Tailwind CSS v4** and **daisyUI v5** for a beautiful, responsive design.
+- **Interactive Charts**: Visual insights into your brewing data.
 
 ## Tech Stack
 - **Runtime & Server**: [Bun](https://bun.sh) (`Bun.serve()`)
