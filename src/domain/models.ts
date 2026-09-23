@@ -159,8 +159,8 @@ export interface BacksweeteningEvent {
 export interface Recipe {
   id: number;
   name: string;
-  description: string;
-  target_sg: number;
+  description?: string | null;
+  target_sg?: number | null;
   type: 'starter' | 'custom';
 }
 

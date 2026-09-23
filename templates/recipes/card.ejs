@@ -1,0 +1,30 @@
+<div class="card bg-base-100 shadow-sm border border-base-300 flex flex-col justify-between">
+  <div class="card-body p-4 sm:p-5 flex flex-col justify-between h-full">
+    <div>
+      <div class="flex justify-between items-start gap-2 mb-2">
+        <h3 class="font-bold text-lg text-base-content"><%= vm.recipe.name %></h3>
+        <% if (vm.recipe.target_sg !== undefined && vm.recipe.target_sg !== null) { %>
+          <div class="text-right shrink-0">
+            <span class="text-xs text-pollen block">Målsukker (SG)</span>
+            <span class="font-semibold text-secondary"><%= vm.targetSgFormatted %></span>
+          </div>
+        <% } %>
+      </div>
+      <% if (vm.recipe.description) { %>
+        <% if (vm.recipe.type === 'starter') { %>
+          <div class="text-sm text-base-content/80 leading-relaxed mb-4">
+            <%- vm.recipe.description %>
+          </div>
+        <% } else { %>
+          <div class="text-sm text-base-content/80 leading-relaxed whitespace-pre-line mb-4"><%= vm.recipe.description %></div>
+        <% } %>
+      <% } %>
+    </div>
+    <div class="mt-4 pt-3 border-t border-base-200 flex justify-end items-center gap-2">
+      <% if (vm.recipe.type === 'custom') { %>
+        <button type="button" class="btn btn-sm btn-ghost text-pollen hover:text-primary" onclick='openEditModal(<%- vm.recipeJson %>)'>Endre</button>
+      <% } %>
+      <a href="/sessions/new?recipe_id=<%= vm.recipe.id %>" hx-get="/sessions/new?recipe_id=<%= vm.recipe.id %>" hx-target="#main-content" hx-push-url="true" class="btn btn-sm btn-primary">Start brygg</a>
+    </div>
+  </div>
+</div>

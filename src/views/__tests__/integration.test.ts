@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import type { Subprocess } from "bun";
 
+const TEST_PORT = process.env.TEST_PORT || "3001";
+const BASE_URL = `http://localhost:${TEST_PORT}`;
+
 describe("HTTP server smoke integration", () => {
 	let proc: Subprocess;
 
@@ -8,13 +11,13 @@ describe("HTTP server smoke integration", () => {
 		proc = Bun.spawn(["bun", "run", "src/server.ts"], {
 			stdout: "pipe",
 			stderr: "pipe",
-			env: { ...process.env, PORT: "3001" }, // fallback if needed
+			env: { ...process.env, PORT: TEST_PORT },
 		});
 
-		// Wait until server is listening on port 3000
+		// Wait until server is listening on TEST_PORT
 		for (let i = 0; i < 30; i++) {
 			try {
-				const res = await fetch("http://localhost:3000/");
+				const res = await fetch(`${BASE_URL}/`);
 				if (res.ok) break;
 			} catch {
 				await Bun.sleep(100);
@@ -29,7 +32,7 @@ describe("HTTP server smoke integration", () => {
 	});
 
 	it("serves the home dashboard (full page)", async () => {
-		const res = await fetch("http://localhost:3000/");
+		const res = await fetch(`${BASE_URL}/`);
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("<!DOCTYPE html>");
@@ -38,7 +41,7 @@ describe("HTTP server smoke integration", () => {
 	});
 
 	it("serves the home dashboard (HTMX partial)", async () => {
-		const res = await fetch("http://localhost:3000/", {
+		const res = await fetch(`${BASE_URL}/`, {
 			headers: { "HX-Request": "true" },
 		});
 		expect(res.status).toBe(200);
@@ -48,14 +51,90 @@ describe("HTTP server smoke integration", () => {
 	});
 
 	it("serves pantry view", async () => {
-		const res = await fetch("http://localhost:3000/pantry");
+		const res = await fetch(`${BASE_URL}/pantry`);
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("Stabbur");
 	});
 
+	it("serves recipes view with standardoppskrifter and navigation link", async () => {
+		const res = await fetch(`${BASE_URL}/oppskrifter`);
+		expect(res.status).toBe(200);
+		const html = await res.text();
+		expect(html).toContain("Oppskrifter");
+		expect(html).toContain("Standardoppskrifter");
+		expect(html).toContain("Mine oppskrifter");
+		expect(html).toContain("Ny oppskrift");
+		expect(html).toContain('href="/oppskrifter"');
+	});
+
+	it("supports creating, editing, and deleting a custom recipe", async () => {
+		// 1. Create recipe
+		const createForm = new FormData();
+		createForm.append("name", "Integrasjonstest Kryddermjød");
+		createForm.append("target_sg", "1.108");
+		createForm.append("description", "Ingefær og stjerneanis");
+
+		const postRes = await fetch(`${BASE_URL}/oppskrifter`, {
+			method: "POST",
+			body: createForm,
+			headers: { "HX-Request": "true" },
+		});
+		expect(postRes.status).toBe(200);
+		let html = await postRes.text();
+		expect(html).toContain("Integrasjonstest Kryddermjød");
+		expect(html).toContain("1.108");
+		expect(html).toContain("Ingefær og stjerneanis");
+
+		// Extract recipe id from the edit button JSON
+		const idMatch = html.match(
+			/"id":(\d+)[^}]*"name":"Integrasjonstest Kryddermjød"/,
+		);
+		expect(idMatch).not.toBeNull();
+		const recipeId = idMatch![1];
+
+		// 2. Pre-select in /sessions/new
+		const newSessionRes = await fetch(
+			`${BASE_URL}/sessions/new?recipe_id=${recipeId}`,
+		);
+		expect(newSessionRes.status).toBe(200);
+		const sessionFormHtml = await newSessionRes.text();
+		expect(sessionFormHtml).toContain(
+			`value="${recipeId}" data-desc="Ingefær og stjerneanis" selected`,
+		);
+
+		// 3. Edit recipe
+		const editForm = new FormData();
+		editForm.append("id", recipeId);
+		editForm.append("name", "Oppdatert Kryddermjød");
+		editForm.append("target_sg", "1.112");
+		editForm.append("description", "Mer ingefær");
+
+		const editRes = await fetch(`${BASE_URL}/oppskrifter/edit`, {
+			method: "POST",
+			body: editForm,
+			headers: { "HX-Request": "true" },
+		});
+		expect(editRes.status).toBe(200);
+		html = await editRes.text();
+		expect(html).toContain("Oppdatert Kryddermjød");
+		expect(html).toContain("1.112");
+
+		// 4. Delete recipe
+		const deleteRes = await fetch(
+			`${BASE_URL}/oppskrifter/${recipeId}`,
+			{
+				method: "DELETE",
+				headers: { "HX-Request": "true" },
+			},
+		);
+		expect(deleteRes.status).toBe(200);
+		html = await deleteRes.text();
+		expect(html).not.toContain("Oppdatert Kryddermjød");
+	});
+
 	it("serves new batch form", async () => {
-		const res = await fetch("http://localhost:3000/sessions/new");
+		const res = await fetch(`${BASE_URL}/sessions/new`);
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("Start nytt brygg");
@@ -63,10 +142,10 @@ describe("HTTP server smoke integration", () => {
 	});
 
 	it("serves static assets", async () => {
-		const cssRes = await fetch("http://localhost:3000/output.css");
+		const cssRes = await fetch(`${BASE_URL}/output.css`);
 		expect(cssRes.status).toBe(200);
 
-		const jsRes = await fetch("http://localhost:3000/htmx.js");
+		const jsRes = await fetch(`${BASE_URL}/htmx.js`);
 		expect(jsRes.status).toBe(200);
 	});
 
@@ -77,7 +156,7 @@ describe("HTTP server smoke integration", () => {
 		formData.append("ph", "3.62");
 		formData.append("note", "Test Must pH Integration");
 
-		const postRes = await fetch("http://localhost:3000/sessions/1/events", {
+		const postRes = await fetch(`${BASE_URL}/sessions/1/events`, {
 			method: "POST",
 			body: formData,
 			headers: { "HX-Request": "true" },
@@ -98,7 +177,7 @@ describe("HTTP server smoke integration", () => {
 		const match = html.match(/\/sessions\/1\/events\/(\d+)/);
 		if (match) {
 			const eventId = match[1];
-			const delRes = await fetch(`http://localhost:3000/sessions/1/events/${eventId}`, {
+			const delRes = await fetch(`${BASE_URL}/sessions/1/events/${eventId}`, {
 				method: "DELETE",
 				headers: { "HX-Request": "true" },
 			});
@@ -113,7 +192,7 @@ describe("HTTP server smoke integration", () => {
 		emptyForm.append("timestamp", "2026-09-18T12:00");
 		emptyForm.append("note", "");
 
-		const emptyRes = await fetch("http://localhost:3000/sessions/1/events", {
+		const emptyRes = await fetch(`${BASE_URL}/sessions/1/events`, {
 			method: "POST",
 			body: emptyForm,
 			headers: { "HX-Request": "true" },
@@ -126,7 +205,7 @@ describe("HTTP server smoke integration", () => {
 		formData.append("timestamp", "2026-09-18T12:30");
 		formData.append("note", "Degassed mead and noted gentle wildflower aroma");
 
-		const postRes = await fetch("http://localhost:3000/sessions/1/events", {
+		const postRes = await fetch(`${BASE_URL}/sessions/1/events`, {
 			method: "POST",
 			body: formData,
 			headers: { "HX-Request": "true" },
@@ -148,7 +227,7 @@ describe("HTTP server smoke integration", () => {
 		editForm.append("timestamp", "2026-09-18T13:00");
 		editForm.append("note", "Updated: Degassed thoroughly, clarity improving");
 
-		const editRes = await fetch("http://localhost:3000/sessions/1/events/edit", {
+		const editRes = await fetch(`${BASE_URL}/sessions/1/events/edit`, {
 			method: "POST",
 			body: editForm,
 			headers: { "HX-Request": "true" },
@@ -161,7 +240,7 @@ describe("HTTP server smoke integration", () => {
 		expect(editHtml).toContain("Updated: Degassed thoroughly, clarity improving");
 
 		// Clean up
-		const delRes = await fetch(`http://localhost:3000/sessions/1/events/${eventId}`, {
+		const delRes = await fetch(`${BASE_URL}/sessions/1/events/${eventId}`, {
 			method: "DELETE",
 			headers: { "HX-Request": "true" },
 		});

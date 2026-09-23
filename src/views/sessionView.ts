@@ -25,14 +25,16 @@ export function getSessionListViewModel(
  */
 export function getNewSessionViewModel(
 	recipes: Recipe[],
+	selectedRecipeId?: number,
 ): NewSessionViewModel {
 	const recipeOptions: NewSessionRecipeOption[] = recipes.map((r) => ({
 		id: r.id,
 		name: r.name,
 		safeDescription: (r.description || "").replace(/"/g, "&quot;"),
+		selected: selectedRecipeId !== undefined && r.id === selectedRecipeId,
 	}));
 
-	return { recipes: recipeOptions };
+	return { recipes: recipeOptions, selectedRecipeId };
 }
 
 /**
@@ -104,8 +106,9 @@ export function renderSessionList(
 export function renderNewSessionForm(
 	recipes: Recipe[],
 	isHtmx: boolean = true,
+	selectedRecipeId?: number,
 ): string {
-	const viewModel = getNewSessionViewModel(recipes);
+	const viewModel = getNewSessionViewModel(recipes, selectedRecipeId);
 	return renderView("sessions/new", viewModel, isHtmx);
 }
 

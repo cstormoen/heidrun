@@ -82,10 +82,23 @@ export interface NewSessionRecipeOption {
 	id: number;
 	name: string;
 	safeDescription: string;
+	selected?: boolean;
 }
 
 export interface NewSessionViewModel {
 	recipes: NewSessionRecipeOption[];
+	selectedRecipeId?: number;
+}
+
+export interface RecipeCardViewModel {
+	recipe: Recipe;
+	targetSgFormatted: string;
+	recipeJson: string;
+}
+
+export interface RecipesViewModel {
+	starterRecipes: RecipeCardViewModel[];
+	customRecipes: RecipeCardViewModel[];
 }
 
 export interface SessionDetailViewModel {

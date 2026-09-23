@@ -5,4 +5,5 @@ export * from "./chartData";
 export * from "./render";
 export * from "./layout";
 export * from "./inventoryView";
+export * from "./recipeView";
 export * from "./sessionView";

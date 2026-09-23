@@ -5,6 +5,7 @@ import {
 	renderBaseLayout,
 	renderNewSessionForm,
 	renderPantryView,
+	renderRecipeView,
 	renderSessionDetail,
 	renderSessionList,
 } from "./views";
@@ -60,8 +61,10 @@ function parseTimestamp(raw?: string | null): string | undefined {
 	return isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
 serve({
-	port: 3000,
+	port: PORT,
 	async fetch(req) {
 		const url = new URL(req.url);
 		const isHtmx = req.headers.get("HX-Request") === "true";
@@ -190,10 +193,101 @@ serve({
 			return htmlResponse(content, true, { pushUrl });
 		}
 
+		// Recipes: List recipes
+		if (
+			req.method === "GET" &&
+			(url.pathname === "/oppskrifter" || url.pathname === "/recipes")
+		) {
+			const recipes = DAL.getRecipes();
+			const content = renderRecipeView(recipes);
+			return htmlResponse(content, isHtmx);
+		}
+
+		// Recipes: Create recipe
+		if (
+			req.method === "POST" &&
+			(url.pathname === "/oppskrifter" || url.pathname === "/recipes")
+		) {
+			const formData = await req.formData();
+			const name = (formData.get("name") as string)?.trim();
+			const targetSgStr = formData.get("target_sg") as string;
+			const targetSg = targetSgStr ? parseFloat(targetSgStr) : undefined;
+			const description =
+				((formData.get("description") as string) || "").trim() || undefined;
+
+			if (name) {
+				DAL.createRecipe({
+					name,
+					target_sg:
+						targetSg !== undefined && !isNaN(targetSg) ? targetSg : undefined,
+					description,
+				});
+			}
+
+			const content = renderRecipeView(DAL.getRecipes());
+			const pushUrl =
+				url.pathname === "/recipes" ? "/recipes" : "/oppskrifter";
+			return htmlResponse(content, true, { pushUrl });
+		}
+
+		// Recipes: Edit recipe
+		if (
+			req.method === "POST" &&
+			(url.pathname === "/oppskrifter/edit" ||
+				url.pathname === "/recipes/edit")
+		) {
+			const formData = await req.formData();
+			const idStr = formData.get("id") as string;
+			const id = parseInt(idStr);
+			const name = (formData.get("name") as string)?.trim();
+			const targetSgStr = formData.get("target_sg") as string;
+			const targetSg = targetSgStr ? parseFloat(targetSgStr) : null;
+			const description =
+				((formData.get("description") as string) || "").trim() || null;
+
+			if (!isNaN(id) && name) {
+				DAL.updateRecipe(id, {
+					name,
+					target_sg: targetSg !== null && !isNaN(targetSg) ? targetSg : null,
+					description,
+				});
+			}
+
+			const content = renderRecipeView(DAL.getRecipes());
+			const pushUrl = url.pathname.startsWith("/recipes")
+				? "/recipes"
+				: "/oppskrifter";
+			return htmlResponse(content, true, { pushUrl });
+		}
+
+		// Recipes: Delete recipe
+		if (
+			req.method === "DELETE" &&
+			(url.pathname.match(/^\/oppskrifter\/\d+$/) ||
+				url.pathname.match(/^\/recipes\/\d+$/))
+		) {
+			const idStr = url.pathname.split("/")[2];
+			const id = parseInt(idStr);
+
+			if (!isNaN(id)) {
+				DAL.deleteRecipe(id);
+			}
+
+			const content = renderRecipeView(DAL.getRecipes());
+			const pushUrl = url.pathname.startsWith("/recipes")
+				? "/recipes"
+				: "/oppskrifter";
+			return htmlResponse(content, true, { pushUrl });
+		}
+
 		// Sessions: New session form
 		if (req.method === "GET" && url.pathname === "/sessions/new") {
+			const recipeIdParam = url.searchParams.get("recipe_id");
+			const selectedRecipeId = recipeIdParam
+				? parseInt(recipeIdParam)
+				: undefined;
 			const recipes = DAL.getRecipes();
-			const content = renderNewSessionForm(recipes);
+			const content = renderNewSessionForm(recipes, true, selectedRecipeId);
 			return htmlResponse(content, isHtmx);
 		}
 
@@ -435,4 +529,4 @@ serve({
 	},
 });
 
-console.log("Server running on http://localhost:3000");
+console.log(`Server running on http://localhost:${PORT}`);

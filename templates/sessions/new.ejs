@@ -9,10 +9,10 @@
       <label class="label"><span class="label-text">Oppskrift / Grunnoppskrift</span></label>
       <select name="recipe_id" id="recipe-select" class="select select-bordered" required onchange="updateRecipeDesc()">
         <% recipes.forEach(function(r) { %>
-          <option value="<%= r.id %>" data-desc="<%- r.safeDescription %>"><%= r.name %></option>
+          <option value="<%= r.id %>" data-desc="<%- r.safeDescription %>" <%= r.selected ? 'selected' : '' %>><%= r.name %></option>
         <% }); %>
       </select>
-      <p id="recipe-desc" class="text-sm text-pollen mt-2 leading-tight"></p>
+      <p id="recipe-desc" class="text-sm text-pollen mt-2 leading-tight whitespace-pre-line"></p>
     </div>
     <div class="mt-4 flex gap-2">
       <button type="submit" class="btn btn-primary">Start brygging</button>

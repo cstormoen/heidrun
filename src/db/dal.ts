@@ -99,11 +99,70 @@ try {
 
 export const DAL = {
   getRecipes: (): Recipe[] => {
-    return db.query("SELECT * FROM recipes").all() as Recipe[];
+    return db.query("SELECT * FROM recipes ORDER BY id ASC").all() as Recipe[];
   },
 
   getRecipeById: (id: number): Recipe | null => {
     return db.query("SELECT * FROM recipes WHERE id = $id").get({ $id: id }) as Recipe | null;
+  },
+
+  createRecipe: (data: {
+    name: string;
+    description?: string | null;
+    target_sg?: number | null;
+  }): Recipe => {
+    const query = db.query(
+      "INSERT INTO recipes (name, description, target_sg, type) VALUES ($name, $description, $target_sg, 'custom') RETURNING *"
+    );
+    return query.get({
+      $name: data.name,
+      $description: data.description ?? null,
+      $target_sg: data.target_sg ?? null,
+    }) as Recipe;
+  },
+
+  updateRecipe: (
+    id: number,
+    data: {
+      name?: string;
+      description?: string | null;
+      target_sg?: number | null;
+    }
+  ): Recipe | null => {
+    const existing = DAL.getRecipeById(id);
+    if (!existing || existing.type !== "custom") {
+      return null;
+    }
+    const name = data.name !== undefined ? data.name : existing.name;
+    const description =
+      data.description !== undefined ? data.description : existing.description;
+    const target_sg =
+      data.target_sg !== undefined ? data.target_sg : existing.target_sg;
+
+    db.run(
+      "UPDATE recipes SET name = $name, description = $description, target_sg = $target_sg WHERE id = $id AND type = 'custom'",
+      {
+        $id: id,
+        $name: name,
+        $description: description ?? null,
+        $target_sg: target_sg ?? null,
+      }
+    );
+    return DAL.getRecipeById(id);
+  },
+
+  deleteRecipe: (id: number): boolean => {
+    const existing = DAL.getRecipeById(id);
+    if (!existing || existing.type !== "custom") {
+      return false;
+    }
+    db.run("UPDATE sessions SET recipe_id = NULL WHERE recipe_id = $id", {
+      $id: id,
+    });
+    db.run("DELETE FROM recipes WHERE id = $id AND type = 'custom'", {
+      $id: id,
+    });
+    return true;
   },
 
   createSession: (recipeId: number, name: string): Session => {
