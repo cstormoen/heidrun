@@ -38,14 +38,10 @@ try {
 
 // Migrate inventory categories and recipes to Norwegian
 try {
-  db.run("UPDATE inventory SET category = 'Honning og sukker' WHERE category = 'Honey & Sugars';");
-  db.run("UPDATE inventory SET category = 'Gjær og kulturer' WHERE category = 'Yeast & Cultures';");
-  db.run("UPDATE inventory SET category = 'Gjærnæring og tilsetninger' WHERE category = 'Nutrients & Additives';");
-  db.run("UPDATE inventory SET category = 'Frukt, bær og krydder' WHERE category = 'Fruits & Adjuncts';");
-
   const invTable = db.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'inventory'").get() as { sql: string } | null;
   if (invTable && invTable.sql && !invTable.sql.includes("'Honning og sukker'")) {
     db.run("PRAGMA foreign_keys = OFF;");
+    db.run("DROP TABLE IF EXISTS inventory_new;");
     db.run(`
       CREATE TABLE inventory_new (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +55,26 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    db.run("INSERT INTO inventory_new (id, name, category, quantity_on_hand, unit, cost_per_unit, currency, url, created_at) SELECT id, name, category, quantity_on_hand, unit, cost_per_unit, currency, url, created_at FROM inventory;");
+    db.run(`
+      INSERT INTO inventory_new (id, name, category, quantity_on_hand, unit, cost_per_unit, currency, url, created_at)
+      SELECT 
+        id, 
+        name, 
+        CASE category
+          WHEN 'Honey & Sugars' THEN 'Honning og sukker'
+          WHEN 'Yeast & Cultures' THEN 'Gjær og kulturer'
+          WHEN 'Nutrients & Additives' THEN 'Gjærnæring og tilsetninger'
+          WHEN 'Fruits & Adjuncts' THEN 'Frukt, bær og krydder'
+          ELSE category
+        END, 
+        quantity_on_hand, 
+        unit, 
+        cost_per_unit, 
+        currency, 
+        url, 
+        created_at 
+      FROM inventory;
+    `);
     db.run("DROP TABLE inventory;");
     db.run("ALTER TABLE inventory_new RENAME TO inventory;");
     db.run("PRAGMA foreign_keys = ON;");
