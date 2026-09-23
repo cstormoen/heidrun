@@ -47,9 +47,9 @@ describe("formatters", () => {
 	});
 
 	describe("formatTimelineDate", () => {
-		it("formats date in en-GB lower-case format", () => {
+		it("formats date in no-NO lower-case format", () => {
 			const formatted = formatTimelineDate("2026-09-17T12:00:00Z");
-			expect(formatted).toMatch(/17 sept?\.? 2026/i);
+			expect(formatted).toMatch(/17\.?\s*sept?\.?\s*2026/i);
 		});
 
 		it("returns empty string on invalid date", () => {
@@ -58,32 +58,32 @@ describe("formatters", () => {
 	});
 
 	describe("formatTimelineDay", () => {
-		it("returns Day 1 for first event", () => {
+		it("returns Dag 1 for first event", () => {
 			expect(
 				formatTimelineDay("2026-08-01T12:00:00Z", "2026-08-01T12:00:00Z"),
-			).toBe("Day 1");
+			).toBe("Dag 1");
 		});
 
-		it("returns Day 1 for same-day events", () => {
+		it("returns Dag 1 for same-day events", () => {
 			expect(
 				formatTimelineDay("2026-08-01T18:30:00Z", "2026-08-01T10:00:00Z"),
-			).toBe("Day 1");
+			).toBe("Dag 1");
 		});
 
 		it("calculates subsequent days accurately", () => {
 			expect(
 				formatTimelineDay("2026-08-02T10:00:00Z", "2026-08-01T10:00:00Z"),
-			).toBe("Day 2");
+			).toBe("Dag 2");
 			expect(
 				formatTimelineDay("2026-08-15T12:00:00Z", "2026-08-01T10:00:00Z"),
-			).toBe("Day 15");
+			).toBe("Dag 15");
 		});
 
-		it("defaults to Day 1 if startDate is not provided or event is earlier", () => {
-			expect(formatTimelineDay("2026-08-01T12:00:00Z")).toBe("Day 1");
+		it("defaults to Dag 1 if startDate is not provided or event is earlier", () => {
+			expect(formatTimelineDay("2026-08-01T12:00:00Z")).toBe("Dag 1");
 			expect(
 				formatTimelineDay("2026-07-30T12:00:00Z", "2026-08-01T12:00:00Z"),
-			).toBe("Day 1");
+			).toBe("Dag 1");
 		});
 
 		it("returns empty string on invalid or missing date", () => {
@@ -98,10 +98,10 @@ describe("formatters", () => {
 			const hourMs = 1000 * 60 * 60;
 			const dayMs = hourMs * 24;
 
-			expect(formatAge(0)).toBe("0 hours");
-			expect(formatAge(hourMs * 3)).toBe("3 hours");
-			expect(formatAge(dayMs * 5 + hourMs * 2)).toBe("5 days, 2 hours");
-			expect(formatAge(dayMs * 35)).toBe("1 month, 4 days");
+			expect(formatAge(0)).toBe("0 timer");
+			expect(formatAge(hourMs * 3)).toBe("3 timer");
+			expect(formatAge(dayMs * 5 + hourMs * 2)).toBe("5 dager, 2 timer");
+			expect(formatAge(dayMs * 35)).toBe("1 måned, 4 dager");
 		});
 	});
 
@@ -162,7 +162,7 @@ describe("formatters", () => {
 	describe("formatUnitPrice & formatCost", () => {
 		it("formats cost per unit string", () => {
 			expect(formatUnitPrice(45, "NOK", "kg")).toBe("45 NOK / kg");
-			expect(formatUnitPrice(undefined)).toBe("No cost data");
+			expect(formatUnitPrice(undefined)).toBe("Ingen prisdata");
 		});
 
 		it("formats total cost string", () => {

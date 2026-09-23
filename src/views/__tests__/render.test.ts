@@ -12,8 +12,8 @@ describe("render module", () => {
 
 	it("renders an EJS template with shared helpers injected", () => {
 		const html = renderTemplate("sessions/list", { sessions: [] });
-		expect(html).toContain("Your Batches");
-		expect(html).toContain("No batches yet");
+		expect(html).toContain("Dine brygg");
+		expect(html).toContain("Ingen brygg ennå");
 		expect(html).not.toContain("<!DOCTYPE html>");
 	});
 
@@ -21,12 +21,12 @@ describe("render module", () => {
 		const html = renderView("sessions/list", { sessions: [] }, false);
 		expect(html).toContain("<!DOCTYPE html>");
 		expect(html).toContain("<title>Heidrun</title>");
-		expect(html).toContain("Your Batches");
+		expect(html).toContain("Dine brygg");
 	});
 
 	it("renders a view with isHtmx = true without base layout wrapper", () => {
 		const html = renderView("sessions/list", { sessions: [] }, true);
 		expect(html).not.toContain("<!DOCTYPE html>");
-		expect(html).toContain("Your Batches");
+		expect(html).toContain("Dine brygg");
 	});
 });

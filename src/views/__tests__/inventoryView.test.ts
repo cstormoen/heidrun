@@ -11,7 +11,7 @@ describe("inventoryView", () => {
 	const mockHoney: InventoryItem = {
 		id: 1,
 		name: "Wildflower Honey",
-		category: "Honey & Sugars",
+		category: "Honning og sukker",
 		quantity_on_hand: 5,
 		unit: "kg",
 		cost_per_unit: 100,
@@ -21,7 +21,7 @@ describe("inventoryView", () => {
 	const mockYeast: InventoryItem = {
 		id: 2,
 		name: "Lalvin D47",
-		category: "Yeast & Cultures",
+		category: "Gjær og kulturer",
 		quantity_on_hand: 3,
 		unit: "packets",
 		cost_per_unit: 35,
@@ -137,12 +137,12 @@ describe("inventoryView", () => {
 				1,
 			);
 
-			expect(html).toContain("Ingredients Used");
+			expect(html).toContain("Råvarer brukt");
 			expect(html).toContain("Wildflower Honey");
 			expect(html).toContain("2 kg");
-			expect(html).toContain("Estimated Batch Cost: 200.00 NOK");
+			expect(html).toContain("Estimert råvarekostnad: 200.00 NOK");
 			expect(html).toContain("Vanilla Bean");
-			expect(html).toContain("Link item:");
+			expect(html).toContain("Koble til vare fra stabburet:");
 		});
 
 		it("returns empty string when no additions are present", () => {
@@ -159,7 +159,7 @@ describe("inventoryView", () => {
 			expect(vm.categories.length).toBe(4);
 
 			const honeyCat = vm.categories.find(
-				(c) => c.category === "Honey & Sugars",
+				(c) => c.category === "Honning og sukker",
 			);
 			expect(honeyCat?.items.length).toBe(1);
 			expect(honeyCat?.items[0].item.name).toBe("Wildflower Honey");
@@ -169,10 +169,10 @@ describe("inventoryView", () => {
 
 		it("renders pantry HTML view", () => {
 			const html = renderPantryView([mockHoney, mockYeast]);
-			expect(html).toContain("Pantry Inventory");
+			expect(html).toContain("Stabbur");
 			expect(html).toContain("Wildflower Honey");
 			expect(html).toContain("Lalvin D47");
-			expect(html).toContain("Add Item");
+			expect(html).toContain("Legg til vare");
 			expect(html).toContain("add_inventory_modal");
 		});
 	});

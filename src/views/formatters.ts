@@ -29,7 +29,7 @@ export function formatTimelineDate(dateStr?: string | Date | null): string {
 	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
 	if (isNaN(d.getTime())) return "";
 	return d
-		.toLocaleDateString("en-GB", {
+		.toLocaleDateString("no-NO", {
 			day: "numeric",
 			month: "short",
 			year: "numeric",
@@ -45,10 +45,10 @@ export function formatTimelineDay(
 	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
 	if (isNaN(d.getTime())) return "";
 
-	if (!startDateStr) return "Day 1";
+	if (!startDateStr) return "Dag 1";
 	const start =
 		typeof startDateStr === "string" ? new Date(startDateStr) : startDateStr;
-	if (isNaN(start.getTime())) return "Day 1";
+	if (isNaN(start.getTime())) return "Dag 1";
 
 	const startDay = new Date(
 		start.getFullYear(),
@@ -65,11 +65,11 @@ export function formatTimelineDay(
 	);
 	const dayNumber = Math.max(1, diffDays + 1);
 
-	return `Day ${dayNumber}`;
+	return `Dag ${dayNumber}`;
 }
 
 export function formatAge(ageMs: number): string {
-	if (ageMs <= 0) return "0 hours";
+	if (ageMs <= 0) return "0 timer";
 
 	const MS_IN_HOUR = 1000 * 60 * 60;
 	const MS_IN_DAY = MS_IN_HOUR * 24;
@@ -84,22 +84,22 @@ export function formatAge(ageMs: number): string {
 	const parts: string[] = [];
 
 	if (years > 0) {
-		parts.push(`${years} year${years !== 1 ? "s" : ""}`);
+		parts.push(`${years} år`);
 		if (months > 0) {
-			parts.push(`${months} month${months !== 1 ? "s" : ""}`);
+			parts.push(`${months} måned${months !== 1 ? "er" : ""}`);
 		}
 	} else if (months > 0) {
-		parts.push(`${months} month${months !== 1 ? "s" : ""}`);
+		parts.push(`${months} måned${months !== 1 ? "er" : ""}`);
 		if (days > 0) {
-			parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+			parts.push(`${days} dag${days !== 1 ? "er" : ""}`);
 		}
 	} else if (days > 0) {
-		parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+		parts.push(`${days} dag${days !== 1 ? "er" : ""}`);
 		if (hours > 0) {
-			parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+			parts.push(`${hours} time${hours !== 1 ? "r" : ""}`);
 		}
 	} else {
-		parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+		parts.push(`${hours} time${hours !== 1 ? "r" : ""}`);
 	}
 
 	return parts.join(", ");
@@ -134,7 +134,7 @@ export function formatUnitPrice(
 	currency = "NOK",
 	unit = "",
 ): string {
-	if (costPerUnit === undefined || costPerUnit === null) return "No cost data";
+	if (costPerUnit === undefined || costPerUnit === null) return "Ingen prisdata";
 	return `${costPerUnit} ${currency} / ${unit}`;
 }
 

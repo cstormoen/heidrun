@@ -1,5 +1,19 @@
-export type Status = 'Planned' | 'Primary Fermentation' | 'Aging' | 'Bottled';
-export type InventoryCategory = 'Honey & Sugars' | 'Yeast & Cultures' | 'Nutrients & Additives' | 'Fruits & Adjuncts';
+export enum Status {
+  Planned = 'Planlagt',
+  PrimaryFermentation = 'Primærgjæring',
+  Aging = 'Modning',
+  Bottled = 'Flasket',
+}
+
+export type InventoryCategory =
+  | 'Honning og sukker'
+  | 'Gjær og kulturer'
+  | 'Gjærnæring og tilsetninger'
+  | 'Frukt, bær og krydder'
+  | 'Honey & Sugars'
+  | 'Yeast & Cultures'
+  | 'Nutrients & Additives'
+  | 'Fruits & Adjuncts';
 
 export interface InventoryItem {
   id: number;
@@ -590,7 +604,7 @@ export function getFiningState(
       stage: 'none',
       sediment_phase: 'none',
       safe_to_siphon: false,
-      status_label: 'Not started',
+      status_label: 'Ikke startet',
     };
   }
 
@@ -611,17 +625,17 @@ export function getFiningState(
       stage = 'sediment_compacted';
       sedimentPhase = 'compacted';
       safeToSiphon = true;
-      statusLabel = 'Sediment Compacted – Safe to Siphon';
+      statusLabel = 'Kompakt bunnfall – trygt å heverte';
     } else if (daysCompacting >= 7) {
       stage = 'sediment_compacting';
       sedimentPhase = 'compacting';
       safeToSiphon = false;
-      statusLabel = `Sediment Compacting (Day ${daysCompacting + 1} of 14)`;
+      statusLabel = `Bunnfall komprimeres (Dag ${daysCompacting + 1} av 14)`;
     } else {
       stage = 'sediment_compacting';
       sedimentPhase = 'loose';
       safeToSiphon = false;
-      statusLabel = `Sediment Settling – Loose Bed (Day ${daysCompacting + 1} of 14)`;
+      statusLabel = `Bunnfall bunnfeller – løst lag (Dag ${daysCompacting + 1} av 14)`;
     }
 
     return {
@@ -654,7 +668,7 @@ export function getFiningState(
       hours_until_chitosan_window: hoursUntil,
       sediment_phase: 'none',
       safe_to_siphon: false,
-      status_label: `Awaiting Chitosan (Window opens in ${hoursUntil}h)`,
+      status_label: `Venter på Chitosan (Vinduet åpner om ${hoursUntil} t)`,
     };
   } else if (elapsedHours <= 24) {
     const hoursRemaining = Number(Math.max(0, 24 - elapsedHours).toFixed(1));
@@ -666,7 +680,7 @@ export function getFiningState(
       hours_remaining_in_chitosan_window: hoursRemaining,
       sediment_phase: 'none',
       safe_to_siphon: false,
-      status_label: `Add Chitosan Now (${hoursRemaining}h left in window)`,
+      status_label: `Tilsett Chitosan nå (${hoursRemaining} t igjen av vinduet)`,
     };
   } else {
     return {
@@ -676,7 +690,7 @@ export function getFiningState(
       hours_since_kieselsol: hoursSince,
       sediment_phase: 'none',
       safe_to_siphon: false,
-      status_label: `Chitosan Addition Overdue (${hoursSince}h elapsed)`,
+      status_label: `Chitosan-tilsetning forsinket (${hoursSince} t har gått)`,
     };
   }
 }
@@ -699,7 +713,7 @@ function deriveSessionMetrics(
   backsweeteningEvents: BacksweeteningEvent[];
   finingState: FiningState;
 } {
-  let status: Status = 'Planned';
+  let status: Status = Status.Planned;
   let og: number | undefined = undefined;
   let currentSg: number | undefined = undefined;
   let currentPh: number | undefined = undefined;
@@ -716,7 +730,7 @@ function deriveSessionMetrics(
         sg = normalizeSg(sg);
         if (og === undefined) og = sg;
         currentSg = sg;
-        if (status === 'Planned') status = 'Primary Fermentation';
+        if (status === Status.Planned) status = Status.PrimaryFermentation;
       }
     }
 
@@ -728,16 +742,16 @@ function deriveSessionMetrics(
     }
 
     if (event.type === 'addition') {
-      if (status === 'Planned') status = 'Primary Fermentation';
+      if (status === Status.Planned) status = Status.PrimaryFermentation;
     }
 
     if (event.type === 'racking') {
       isRacked = true;
-      if (status !== 'Bottled') status = 'Aging';
+      if (status !== Status.Bottled) status = Status.Aging;
     }
 
     if (event.type === 'bottling') {
-      status = 'Bottled';
+      status = Status.Bottled;
     }
   }
 
@@ -757,8 +771,8 @@ function deriveSessionMetrics(
     : [];
   const finingState = getFiningState(sortedEvents, inventoryList, nowMs);
 
-  if (isGravityStable && status !== 'Bottled') {
-    status = 'Aging';
+  if (isGravityStable && status !== Status.Bottled) {
+    status = Status.Aging;
   }
 
   return {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import type { Event, InventoryItem, Recipe, Session } from "../../domain/models";
+import {
+	type Event,
+	type InventoryItem,
+	type Recipe,
+	type Session,
+	Status,
+} from "../../domain/models";
 import {
 	getNewSessionViewModel,
 	getSessionDetailViewModel,
@@ -114,13 +120,13 @@ describe("sessionView module", () => {
 
 	it("renders session list HTML correctly", () => {
 		const listHtml = renderSessionList([mockSession]);
-		expect(listHtml).toContain("Your Batches");
+		expect(listHtml).toContain("Dine brygg");
 		expect(listHtml).toContain("Test Batch");
 	});
 
 	it("renders new session form HTML correctly", () => {
 		const formHtml = renderNewSessionForm(mockRecipes);
-		expect(formHtml).toContain("Start New Batch");
+		expect(formHtml).toContain("Start nytt brygg");
 		expect(formHtml).toContain("Traditional Mead");
 		expect(formHtml).toContain("&quot;wildflower&quot;");
 	});
@@ -132,31 +138,31 @@ describe("sessionView module", () => {
 			mockInventory,
 		);
 		expect(detailHtml).toContain("Test Batch");
-		expect(detailHtml).toContain("Fermentation Curve");
+		expect(detailHtml).toContain("Gjæringskurve");
 		expect(detailHtml).toContain("Fermaid O");
-		expect(detailHtml).toContain("Event History");
+		expect(detailHtml).toContain("Logg");
 		expect(detailHtml).toContain('id="event-history-title"');
 		expect(detailHtml).toContain(
 			'hx-swap="innerHTML show:#event-history-title:top focus-scroll:false"',
 		);
-		expect(detailHtml).toContain("Ingredients Used");
-		expect(detailHtml).toContain("Log Event");
+		expect(detailHtml).toContain("Råvarer brukt");
+		expect(detailHtml).toContain("Loggfør hendelse");
 		// Ingredients Used should be rendered below Event History
-		expect(detailHtml.indexOf("Ingredients Used")).toBeGreaterThan(
-			detailHtml.indexOf("Event History"),
+		expect(detailHtml.indexOf("Råvarer brukt")).toBeGreaterThan(
+			detailHtml.indexOf("Logg"),
 		);
 		// Timeline renders days since start
-		expect(detailHtml).toContain("Day 1");
-		expect(detailHtml).toContain("Day 2");
-		expect(detailHtml).toContain("Day 15");
+		expect(detailHtml).toContain("Dag 1");
+		expect(detailHtml).toContain("Dag 2");
+		expect(detailHtml).toContain("Dag 15");
 		// Not stabilized by default, should render locked guidance
-		expect(detailHtml).toContain("Backsweetening Guidance (Locked)");
+		expect(detailHtml).toContain("Ettersøting (Låst)");
 
 		// Edit button is in timeline
-		expect(detailHtml).toContain('title="Edit Event"');
+		expect(detailHtml).toContain('title="Rediger hendelse"');
 
 		// Delete button is inside the event modal, not duplicated per timeline item
-		const deleteMatches = [...detailHtml.matchAll(/title="Delete Event"/g)];
+		const deleteMatches = [...detailHtml.matchAll(/title="Slett hendelse"/g)];
 		expect(deleteMatches.length).toBe(1);
 		expect(detailHtml).toContain('id="event-delete-btn"');
 		expect(detailHtml).toMatch(
@@ -183,17 +189,17 @@ describe("sessionView module", () => {
 		);
 
 		// Current pH in stats bar
-		expect(detailHtml).toContain("Current pH");
+		expect(detailHtml).toContain("Nåværende pH");
 		expect(detailHtml).toContain("3.65");
 		expect(detailHtml).not.toContain("Optimal (3.2–3.8)");
 
 		// Timeline shows pH Reading
-		expect(detailHtml).toContain("pH Reading");
+		expect(detailHtml).toContain("pH-måling");
 		expect(detailHtml).toContain("pH 3.65");
 		expect(detailHtml).toContain("Must adjusted with bicarbonate");
 
 		// Modal options & container
-		expect(detailHtml).toContain('<option value="ph_reading">pH Reading</option>');
+		expect(detailHtml).toContain('<option value="ph_reading">pH-måling</option>');
 		expect(detailHtml).toContain('id="ph-data-container"');
 		expect(detailHtml).toContain('name="ph"');
 
@@ -221,7 +227,7 @@ describe("sessionView module", () => {
 
 		// Timeline displays comment text and note
 		expect(detailHtml).toContain("Carboy smelled distinctly of clover honey and citrus");
-		expect(detailHtml).toContain('<option value="comment">Comment</option>');
+		expect(detailHtml).toContain('<option value="comment">Kommentar</option>');
 	});
 
 	it("renders pH guidance card with malic acid adjustment when pH is above 3.8", () => {
@@ -243,19 +249,19 @@ describe("sessionView module", () => {
 		);
 
 		// Stats bar shows outside target
-		expect(detailHtml).toContain("Outside target (3.2–3.8)");
+		expect(detailHtml).toContain("Utenfor målområde (3,2–3,8)");
 
 		// pH guidance card is present
 		expect(detailHtml).toContain('id="ph-guidance-card"');
-		expect(detailHtml).toContain("optimal pH range for mead is <strong>3.2 to 3.8</strong>");
-		expect(detailHtml).toContain("Why pH Matters During Aging");
-		expect(detailHtml).toContain("Microbial Protection &amp; Sulfite Efficiency");
-		expect(detailHtml).toContain("Flavor &amp; Balance");
-		expect(detailHtml).toContain("Recommended Adjustment");
-		expect(detailHtml).toContain("malic acid (<em>eplesyre</em>)");
-		expect(detailHtml).toContain("1 gram of malic acid per liter of mead");
-		expect(detailHtml).toContain("3.8 or below");
-		expect(detailHtml).toContain("Log Malic Acid Addition");
+		expect(detailHtml).toContain("optimale pH-området for mjød er <strong>3,2 til 3,8</strong>");
+		expect(detailHtml).toContain("Hvorfor pH er viktig under modning");
+		expect(detailHtml).toContain("Mikrobiell beskyttelse &amp; sulfitteffektivitet");
+		expect(detailHtml).toContain("Smak &amp; balanse");
+		expect(detailHtml).toContain("Anbefalt justering");
+		expect(detailHtml).toContain("eplesyre (malic acid)");
+		expect(detailHtml).toContain("1 gram eplesyre per liter mjød");
+		expect(detailHtml).toContain("3,8 eller lavere");
+		expect(detailHtml).toContain("Loggfør eplesyretilsetning");
 	});
 
 	it("renders pH guidance card with buffering adjustment when pH is below 3.2", () => {
@@ -277,34 +283,34 @@ describe("sessionView module", () => {
 		);
 
 		// Stats bar shows outside target
-		expect(detailHtml).toContain("Outside target (3.2–3.8)");
+		expect(detailHtml).toContain("Utenfor målområde (3,2–3,8)");
 
 		// pH guidance card is present with low pH advisory
 		expect(detailHtml).toContain('id="ph-guidance-card"');
-		expect(detailHtml).toContain("pH Low (&lt; 3.2)");
-		expect(detailHtml).toContain("too acidic for the yeast");
-		expect(detailHtml).toContain("Key Impacts of a pH Below 3.2");
-		expect(detailHtml).toContain("Yeast Stress &amp; Stalled Fermentation");
-		expect(detailHtml).toContain("Harsh Taste");
-		expect(detailHtml).toContain("How to Raise the pH Back to Safety");
-		expect(detailHtml).toContain("Chalk (Calcium Carbonate / <em>Kritt</em>)");
+		expect(detailHtml).toContain("pH lav (&lt; 3,2)");
+		expect(detailHtml).toContain("for surt for gjæren");
+		expect(detailHtml).toContain("Viktige konsekvenser ved pH under 3,2");
+		expect(detailHtml).toContain("Gjærstress &amp; stagnert gjæring");
+		expect(detailHtml).toContain("Skarp smak");
+		expect(detailHtml).toContain("Hvordan heve pH tilbake til trygt nivå");
+		expect(detailHtml).toContain("Kritt (Kalsiumkarbonat)");
 		expect(detailHtml).toContain(
-			"Potassium Bicarbonate or Baking Soda (<em>Natron</em>)",
+			"Kaliumbikarbonat eller natron",
 		);
-		expect(detailHtml).toContain("Log Buffer Addition");
+		expect(detailHtml).toContain("Loggfør buffertilsetning");
 	});
 
 	it("renders session card with Aging (Modning) and Chemically Stabilized badge", () => {
 		const cardHtml = renderSessionCard({
 			...mockSession,
-			status: "Aging",
+			status: Status.Aging,
 			is_chemically_stabilized: true,
 			current_sg: 1.000,
 			abv: 14.2,
-			age_formatted: "30 days",
+			age_formatted: "30 dager",
 		});
-		expect(cardHtml).toContain("Aging (Modning)");
-		expect(cardHtml).toContain("Chemically Stabilized");
+		expect(cardHtml).toContain("Modning");
+		expect(cardHtml).toContain("Kjemisk stabilisert");
 	});
 
 	it("renders session detail with Unlocked Backsweetening Guidance when chemically stabilized", () => {
@@ -328,9 +334,9 @@ describe("sessionView module", () => {
 			stabilizedEvents,
 			mockInventory,
 		);
-		expect(detailHtml).toContain("Chemically Stabilized");
-		expect(detailHtml).toContain("Backsweetening Guidance (Ettersøting)");
-		expect(detailHtml).toContain("Log Backsweetening");
+		expect(detailHtml).toContain("Kjemisk stabilisert");
+		expect(detailHtml).toContain("Ettersøting");
+		expect(detailHtml).toContain("Loggfør ettersøting");
 	});
 
 	it("renders Next Steps card with Primary Care Tip and aeration prompt before 1/3 break", () => {
@@ -357,15 +363,15 @@ describe("sessionView module", () => {
 			mockInventory,
 		);
 
-		expect(detailHtml).toContain("Next Steps");
-		expect(detailHtml).toContain("1/3 Sugar Break");
+		expect(detailHtml).toContain("Neste steg");
+		expect(detailHtml).toContain("1/3-sukkerbrudd");
 		expect(detailHtml).toContain("1.073");
 		expect(detailHtml).toContain(
-			"Current SG is 1.090. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.",
+			"Nåværende SG er 1.090. Husk å røre ut CO₂ og tilsette siste dose gjærnæring før 1/3 av sukkeret er utgjæret (SG 1.073).",
 		);
-		expect(detailHtml).toContain("Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂.");
-		expect(detailHtml).toContain("Degas and aerate the batch daily before reaching this break");
-		expect(detailHtml).toContain("Target threshold");
+		expect(detailHtml).toContain("Tips for primærgjæring (Dag 1–5): Rør forsiktig for å frigjøre CO₂ før du tilsetter næring eller måler spesifikk tetthet (SG).");
+		expect(detailHtml).toContain("Luft og avgass brygget daglig før 1/3 av sukkeret er utgjæret");
+		expect(detailHtml).toContain("Målgrense");
 	});
 
 	it("renders Next Steps card with Stop Aerating warning past 1/3 break", () => {
@@ -392,13 +398,13 @@ describe("sessionView module", () => {
 			mockInventory,
 		);
 
-		expect(detailHtml).toContain("Next Steps");
+		expect(detailHtml).toContain("Neste steg");
 		expect(detailHtml).toContain(
-			"1/3 Sugar Break reached (1.073)! Stop aerating and keep the vessel sealed under an airlock.",
+			"1/3 av sukkeret er utgjæret (SG 1.073)! Stopp all lufting og hold karet forseglet med gjærlås.",
 		);
-		expect(detailHtml).toContain("Past 1/3 Sugar Break (1.073): Stop Aerating!");
-		expect(detailHtml).toContain("Stop aerating once past the 1/3 break to prevent oxidation during aging");
-		expect(detailHtml).toContain('aria-label="Break reached"');
+		expect(detailHtml).toContain("1/3 av sukkeret er utgjæret (SG 1.073): Stopp lufting!");
+		expect(detailHtml).toContain("Stopp lufting etter dette punktet for å forhindre oksidering under modning");
+		expect(detailHtml).toContain('aria-label="1/3-sukkerbrudd nådd"');
 		expect(detailHtml).toContain("text-warning");
 		expect(detailHtml).not.toMatch(/<div class="stat-desc[^>]*">\s*Break reached\s*<\/div>/);
 	});
@@ -423,7 +429,7 @@ describe("sessionView module", () => {
 		];
 		const html1 = renderSessionDetail(mockSession, scenario1Events, mockInventory);
 		expect(html1).toContain(
-			"Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.",
+			"Nåværende SG er 1.085. Husk å røre ut CO₂ og tilsette siste dose gjærnæring før 1/3 av sukkeret er utgjæret (SG 1.073).",
 		);
 
 		// Scenario 2: After break with break at 1.070 (OG 1.105)
@@ -445,26 +451,26 @@ describe("sessionView module", () => {
 		];
 		const html2 = renderSessionDetail(mockSession, scenario2Events, mockInventory);
 		expect(html2).toContain(
-			"1/3 Sugar Break reached (1.070)! Stop aerating and keep the vessel sealed under an airlock.",
+			"1/3 av sukkeret er utgjæret (SG 1.070)! Stopp all lufting og hold karet forseglet med gjærlås.",
 		);
 	});
 
 	it("renders Next Steps partial directly using renderNextSteps", () => {
 		const sessionInPrimary: Session = {
 			...mockSession,
-			status: "Primary Fermentation",
+			status: Status.PrimaryFermentation,
 			is_sugar_break_reached: false,
 		};
 		const html = renderNextSteps(sessionInPrimary, "1.085", "1.073");
 		expect(html).toContain("id=\"next-steps-card\"");
-		expect(html).toContain("Next Steps");
-		expect(html).toContain("Current SG is 1.085. Remember to degas CO₂ and add your final nutrient dose before SG reaches 1.073.");
+		expect(html).toContain("Neste steg");
+		expect(html).toContain("Nåværende SG er 1.085. Husk å røre ut CO₂ og tilsette siste dose gjærnæring før 1/3 av sukkeret er utgjæret (SG 1.073).");
 	});
 
 	it("renders dynamic compaction days remaining in Next Steps during sediment compacting", () => {
 		const sessionCompactingPlural: Session = {
 			...mockSession,
-			status: "Aging",
+			status: Status.Aging,
 			fining_state: {
 				stage: "sediment_compacting",
 				days_compacting: 3,
@@ -472,16 +478,16 @@ describe("sessionView module", () => {
 				compaction_progress_pct: 21,
 				sediment_phase: "loose",
 				safe_to_siphon: false,
-				status_label: "Sediment Settling – Loose Bed (Day 4 of 14)",
+				status_label: "Bunnfall bunnfeller – løst lag (Dag 4 av 14)",
 			},
 		};
 		const htmlPlural = renderNextSteps(sessionCompactingPlural, "1.000", "1.073");
-		expect(htmlPlural).toContain("Wait 11 more days (until Day 14):");
-		expect(htmlPlural).toContain("Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.");
+		expect(htmlPlural).toContain("Vent 11 dager til (til dag 14):");
+		expect(htmlPlural).toContain("Heverting anbefales når bunnfallet er fast komprimert for å unngå å dra med gjær i flaskene.");
 
 		const sessionCompactingSingular: Session = {
 			...mockSession,
-			status: "Aging",
+			status: Status.Aging,
 			fining_state: {
 				stage: "sediment_compacting",
 				days_compacting: 13,
@@ -489,17 +495,17 @@ describe("sessionView module", () => {
 				compaction_progress_pct: 93,
 				sediment_phase: "compacting",
 				safe_to_siphon: false,
-				status_label: "Sediment Compacting (Day 14 of 14)",
+				status_label: "Bunnfall komprimeres (Dag 14 av 14)",
 			},
 		};
 		const htmlSingular = renderNextSteps(sessionCompactingSingular, "1.000", "1.073");
-		expect(htmlSingular).toContain("Wait 1 more day (until Day 14):");
+		expect(htmlSingular).toContain("Vent 1 dager til (til dag 14):");
 	});
 
 	it("renders fining status badges on session cards", () => {
 		const sessionCompacting: Session = {
 			...mockSession,
-			status: "Aging",
+			status: Status.Aging,
 			fining_state: {
 				stage: "sediment_compacting",
 				days_compacting: 3,
@@ -507,15 +513,15 @@ describe("sessionView module", () => {
 				compaction_progress_pct: 21,
 				sediment_phase: "loose",
 				safe_to_siphon: false,
-				status_label: "Sediment Settling – Loose Bed (Day 4 of 14)",
+				status_label: "Bunnfall bunnfeller – løst lag (Dag 4 av 14)",
 			},
 		};
 		const cardHtml = renderSessionCard(sessionCompacting);
-		expect(cardHtml).toContain("Compacting (Day 4/14)");
+		expect(cardHtml).toContain("Bunnfall komprimeres (Dag 4/14)");
 
 		const sessionCompacted: Session = {
 			...mockSession,
-			status: "Aging",
+			status: Status.Aging,
 			fining_state: {
 				stage: "sediment_compacted",
 				days_compacting: 14,
@@ -523,11 +529,11 @@ describe("sessionView module", () => {
 				compaction_progress_pct: 100,
 				sediment_phase: "compacted",
 				safe_to_siphon: true,
-				status_label: "Sediment Compacted – Safe to Siphon",
+				status_label: "Kompakt bunnfall – trygt å heverte",
 			},
 		};
 		const cardHtml2 = renderSessionCard(sessionCompacted);
-		expect(cardHtml2).toContain("Sediment Compacted");
+		expect(cardHtml2).toContain("Kompakt bunnfall");
 	});
 
 	it("renders collapsible cards (Next Steps, Fermentation Curve) using details and collapse classes", () => {
@@ -541,12 +547,12 @@ describe("sessionView module", () => {
 		expect(detailHtml).toContain('<details class="collapse collapse-arrow');
 		expect(detailHtml).toContain('id="next-steps-card"');
 		expect(detailHtml).toContain('<summary class="collapse-title');
-		expect(detailHtml).toContain('Next Steps');
+		expect(detailHtml).toContain('Neste steg');
 		expect(detailHtml).toContain('<div class="collapse-content">');
 
 		// Fermentation Curve card is collapsible
 		expect(detailHtml).toContain('id="fermentation-curve-card"');
-		expect(detailHtml).toContain('Fermentation Curve');
+		expect(detailHtml).toContain('Gjæringskurve');
 
 		// Backsweetening Guidance is collapsible
 		expect(detailHtml).toContain('id="backsweetening-guidance-card"');
@@ -615,8 +621,8 @@ describe("sessionView module", () => {
 		];
 
 		const html = renderSessionDetail(mockSession, batchEvents, honeyPantry);
-		expect(html).toContain("Est. Volume");
+		expect(html).toContain("Estimert volum");
 		expect(html).toContain("~9.0 L");
-		expect(html).toContain("Calculated batch volume: <strong class=\"text-secondary\">~9.0 L</strong>");
+		expect(html).toContain("Beregnet bryggvolum: <strong class=\"text-secondary\">~9.0 L</strong>");
 	});
 });

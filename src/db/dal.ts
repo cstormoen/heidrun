@@ -36,6 +36,52 @@ try {
   console.error("Migration error for events table:", err);
 }
 
+// Migrate inventory categories and recipes to Norwegian
+try {
+  db.run("UPDATE inventory SET category = 'Honning og sukker' WHERE category = 'Honey & Sugars';");
+  db.run("UPDATE inventory SET category = 'Gjær og kulturer' WHERE category = 'Yeast & Cultures';");
+  db.run("UPDATE inventory SET category = 'Gjærnæring og tilsetninger' WHERE category = 'Nutrients & Additives';");
+  db.run("UPDATE inventory SET category = 'Frukt, bær og krydder' WHERE category = 'Fruits & Adjuncts';");
+
+  const invTable = db.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'inventory'").get() as { sql: string } | null;
+  if (invTable && invTable.sql && !invTable.sql.includes("'Honning og sukker'")) {
+    db.run("PRAGMA foreign_keys = OFF;");
+    db.run(`
+      CREATE TABLE inventory_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL CHECK (category IN ('Honning og sukker', 'Gjær og kulturer', 'Gjærnæring og tilsetninger', 'Frukt, bær og krydder')),
+        quantity_on_hand REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL,
+        cost_per_unit REAL,
+        currency TEXT,
+        url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    db.run("INSERT INTO inventory_new (id, name, category, quantity_on_hand, unit, cost_per_unit, currency, url, created_at) SELECT id, name, category, quantity_on_hand, unit, cost_per_unit, currency, url, created_at FROM inventory;");
+    db.run("DROP TABLE inventory;");
+    db.run("ALTER TABLE inventory_new RENAME TO inventory;");
+    db.run("PRAGMA foreign_keys = ON;");
+  }
+
+  // Update starter recipes if in English
+  db.run(`
+    UPDATE recipes 
+    SET name = 'Tradisjonell mjød', 
+        description = '<strong>Tradisjonell mjød</strong> (Mål-OG: 1.110 | ~14 % ABV) Ren honningvin med milde florale aromaer. Krever <strong>~1,8 kg honning per 5 L</strong>, Lalvin D-47 gjær og trinnvis gjærnæringstilsats (SNA).' 
+    WHERE name = 'Traditional Mead';
+  `);
+  db.run(`
+    UPDATE recipes 
+    SET name = 'Melomel (Fruktmjød)', 
+        description = '<strong>Melomel (Fruktmjød)</strong> (Mål-OG: 1.120 | ~15 % ABV) Frisk mjød gjæret med bær. Restsødme balanserer fruktsyren. Krever <strong>~2,0 kg honning + 1–1,5 kg bær/frukt per 5 L</strong> med Lalvin 71B gjær.' 
+    WHERE name = 'Melomel (Fruit Mead)';
+  `);
+} catch (err) {
+  console.error("Migration error for inventory/recipes tables:", err);
+}
+
 export const DAL = {
   getRecipes: (): Recipe[] => {
     return db.query("SELECT * FROM recipes").all() as Recipe[];

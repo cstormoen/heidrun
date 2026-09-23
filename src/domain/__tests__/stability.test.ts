@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	Status,
 	calculateEstimatedBatchVolume,
 	checkChemicalStabilization,
 	checkGravityStability,
@@ -31,7 +32,7 @@ describe("Gravity Stability (is_gravity_stable)", () => {
 
 		const derived = deriveSessionState(baseSession, events);
 		expect(derived.is_gravity_stable).toBe(false);
-		expect(derived.status).toBe("Primary Fermentation");
+		expect(derived.status).toBe(Status.PrimaryFermentation);
 	});
 
 	it("returns false when two identical SG readings are less than 7 days apart", () => {
@@ -55,7 +56,7 @@ describe("Gravity Stability (is_gravity_stable)", () => {
 
 		const derived = deriveSessionState(baseSession, events);
 		expect(derived.is_gravity_stable).toBe(false);
-		expect(derived.status).toBe("Primary Fermentation");
+		expect(derived.status).toBe(Status.PrimaryFermentation);
 	});
 
 	it("returns false when readings are 7+ days apart but SG values differ", () => {
@@ -79,7 +80,7 @@ describe("Gravity Stability (is_gravity_stable)", () => {
 
 		const derived = deriveSessionState(baseSession, events);
 		expect(derived.is_gravity_stable).toBe(false);
-		expect(derived.status).toBe("Primary Fermentation");
+		expect(derived.status).toBe(Status.PrimaryFermentation);
 	});
 
 	it("returns true when two identical SG readings are logged >= 7 days apart and transitions status to Aging", () => {
@@ -110,7 +111,7 @@ describe("Gravity Stability (is_gravity_stable)", () => {
 
 		const derived = deriveSessionState(baseSession, events);
 		expect(derived.is_gravity_stable).toBe(true);
-		expect(derived.status).toBe("Aging");
+		expect(derived.status).toBe(Status.Aging);
 	});
 
 	it("handles intermediate readings correctly and ensures stability across the entire window", () => {
@@ -193,7 +194,7 @@ describe("Gravity Stability (is_gravity_stable)", () => {
 		];
 		const derived = deriveSessionState(baseSession, events);
 		expect(derived.is_gravity_stable).toBe(true);
-		expect(derived.status).toBe("Bottled");
+		expect(derived.status).toBe(Status.Bottled);
 	});
 });
 

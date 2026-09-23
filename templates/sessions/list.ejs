@@ -1,13 +1,13 @@
 <div>
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">Your Batches</h1>
-    <button class="btn btn-primary" hx-get="/sessions/new" hx-target="#main-content" hx-push-url="true">New Batch</button>
+    <h1 class="text-2xl font-bold">Dine brygg</h1>
+    <button class="btn btn-primary" hx-get="/sessions/new" hx-target="#main-content" hx-push-url="true">Nytt brygg</button>
   </div>
   <% if (sessions && sessions.length > 0) { %>
     <% sessions.forEach(function(session) { %>
       <%- include('./card', { session }) %>
     <% }); %>
   <% } else { %>
-    <div class="text-center py-10 opacity-60">No batches yet. Start brewing!</div>
+    <div class="text-center py-10 opacity-60">Ingen brygg ennå. Start et nytt brygg!</div>
   <% } %>
 </div>

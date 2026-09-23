@@ -1,21 +1,21 @@
 <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="next-steps-card" open>
   <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
-    Next Steps
+    Neste steg
   </summary>
   <div class="collapse-content">
 
-    <% if (session.status === 'Primary Fermentation') { %>
+    <% if (session.status === 'Primary Fermentation' || session.status === 'Primærgjæring') { %>
       <% if (!session.is_sugar_break_reached) { %>
         <!-- Pre-1/3 Break: Actionable Next Step Alert -->
         <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
           <span class="text-xl leading-none">💡</span>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Current SG is <%= currentSgFormatted %>. Remember to degas CO₂ and add your final nutrient dose before SG reaches <%= sugarBreakFormatted %>.
-              <span style="display: none;">Current SG is <%= currentSgFormatted %>. Remember to degas CO₂ and add your final nutrient dose before SG reaches <%= sugarBreakFormatted %>.</span>
+              Nåværende SG er <%= currentSgFormatted %>. Husk å røre ut CO₂ og tilsette siste dose gjærnæring før 1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>).
+              <span style="display: none;">Nåværende SG er <%= currentSgFormatted %>. Husk å røre ut CO₂ og tilsette siste dose gjærnæring før 1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>).</span>
             </div>
             <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
-              Primary Care Tip (Days 1–5): Degas and swirl gently before adding nutrients or taking SG readings to release CO₂. During the first 3 to 5 days of primary fermentation, accumulated dissolved CO₂ is toxic to yeast and can cause foam-over ("volcano") explosions when dry additives are introduced.
+              Tips for primærgjæring (Dag 1–5): Rør forsiktig for å frigjøre CO₂ før du tilsetter næring eller måler spesifikk tetthet (SG). De første 3 til 5 dagene av primærgjæringen er oppsamlet oppløst CO₂ giftig for gjæren og kan føre til voldsom overskumming ("vulkan") når tørre tilsetninger has i.
             </div>
           </div>
         </div>
@@ -23,15 +23,15 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">1.</span>
-            <span><strong>Daily Degas &amp; Aerate:</strong> Degas and aerate the batch daily before reaching this break (<%= sugarBreakFormatted %>). Oxygen is essential right now for healthy yeast cell growth and biomass building.</span>
+            <span><strong>Daglig avgassing og lufting:</strong> Luft og avgass brygget daglig før 1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>). Oksygen er avgjørende nå for sunn cellevekst og oppbygging av gjærbiomasse.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">2.</span>
-            <span><strong>Swirl Before Additions:</strong> Swirl gently before adding staggered nutrients (SNA) or measuring SG to release dissolved gas and avoid violent foaming.</span>
+            <span><strong>Rør om før tilsetning:</strong> Rør forsiktig rundt før trinnvis næringstilsats (SNA) eller måling av spesifikk tetthet for å slippe ut oppløst gass og unngå kraftig skumming.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">3.</span>
-            <span><strong>Approaching 1/3 Sugar Break (<%= sugarBreakFormatted %>):</strong> Monitor gravity. Aeration must stop completely as soon as SG reaches <%= sugarBreakFormatted %> to prevent oxidation during aging.</span>
+            <span><strong>Nærmer seg 1/3 av sukkeret utgjæret (SG <%= sugarBreakFormatted %>):</strong> Følg med på spesifikk tetthet. All lufting må opphøre umiddelbart når 1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>) for å forhindre oksidering under modning.</span>
           </div>
         </div>
       <% } else { %>
@@ -42,10 +42,10 @@
           </svg>
           <div>
             <div class="text-sm font-bold text-base-content">
-              1/3 Sugar Break reached (<%= sugarBreakFormatted %>)! Stop aerating and keep the vessel sealed under an airlock.
+              1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>)! Stopp all lufting og hold karet forseglet med gjærlås.
             </div>
             <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
-              Past 1/3 Sugar Break (<%= sugarBreakFormatted %>): Stop Aerating! Stop aerating once past the 1/3 break to prevent oxidation during aging. Yeast has completed its aerobic growth phase. Any oxygen introduced now will not benefit the yeast and will oxidize delicate honey aromatics into cardboard or stale notes.
+              1/3 av sukkeret er utgjæret (SG <%= sugarBreakFormatted %>): Stopp lufting! Stopp lufting etter dette punktet for å forhindre oksidering under modning. Gjæren er ferdig med den aerobe vekstfasen. Oksygen som tilføres nå gagner ikke gjæren og vil oksidere delikate honningaromaer til papp- eller emneaktige usmaker.
             </div>
           </div>
         </div>
@@ -53,33 +53,33 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-warning font-bold">1.</span>
-            <span><strong>Airlock Sealed:</strong> Keep the carboy firmly under airlock with minimal headspace. Avoid splashing or whipping air into the must.</span>
+            <span><strong>Forseglet gjærlås:</strong> Hold ballongen/karet godt forseglet under gjærlås med minimalt luftrom. Unngå plasking eller innvisping av luft i mjøden.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-warning font-bold">2.</span>
-            <span><strong>Gentle Swirling Only:</strong> If adding remaining nutrients, swirl very gently under airlock to release CO₂ without admitting air.</span>
+            <span><strong>Kun forsiktig virvling:</strong> Hvis du tilsetter gjenværende næring, sving karet svært forsiktig under gjærlås for å frigjøre CO₂ uten å slippe inn luft.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-warning font-bold">3.</span>
-            <span><strong>Wait for Gravity Stability:</strong> Let fermentation run until completion. Look for two identical SG readings 7+ days apart to confirm primary fermentation is complete.</span>
+            <span><strong>Vent på stabil SG:</strong> La gjæringen gå helt ferdig. Se etter to identiske SG-målinger med minst 7 dagers mellomrom for å bekrefte at primærgjæringen er fullført.</span>
           </div>
         </div>
       <% } %>
-    <% } else if (session.status === 'Planned') { %>
+    <% } else if (session.status === 'Planned' || session.status === 'Planlagt') { %>
       <p class="text-sm text-base-content leading-relaxed">
-        Pitch yeast and record your first Specific Gravity reading to establish the Original Gravity (OG). Daily degassing and aeration begins once fermentation takes off.
+        Tilsett gjær og registrer din første SG-måling for å etablere start-SG (OG). Daglig avgassing og lufting starter så snart gjæringen kommer i gang.
       </p>
-    <% } else if (session.status === 'Aging') { %>
+    <% } else if (session.status === 'Aging' || session.status === 'Modning') { %>
       <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
         <!-- Stage 1: Kieselsol added, awaiting Chitosan 12-24h window -->
         <div class="alert alert-info bg-info/10 border border-info/20 rounded-lg p-3.5 mb-3 flex items-start gap-2.5" id="actionable-next-step-alert">
           <span class="text-xl leading-none">⏳</span>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Kieselsol [-] added <%= session.fining_state.hours_since_kieselsol %> hours ago. Wait 12–24 hours before adding Chitosan [+] (window opens in <%= session.fining_state.hours_until_chitosan_window %> hours).
+              Kieselsol [-] ble tilsatt for <%= session.fining_state.hours_since_kieselsol %> timer siden. Vent 12–24 timer før du tilsetter Chitosan [+] (vinduet åpner om <%= session.fining_state.hours_until_chitosan_window %> timer).
             </div>
             <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
-              Dual-Stage Clarification: Kieselsol carries a negative (-) electrostatic charge and binds positively charged yeast proteins. Waiting 12 to 24 hours gives it time to disperse evenly through the mead before introducing positively charged Chitosan.
+              Klarningsmiddel i to trinn: Kieselsol har en negativ (-) elektrostatisk ladning og binder positivt ladede gjærproteiner. Å vente 12 til 24 timer gir det tid til å spre seg jevnt i mjøden før positivt ladet Chitosan tilsettes.
             </div>
           </div>
         </div>
@@ -87,11 +87,11 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">1.</span>
-            <span><strong>Keep Carboy Sealed:</strong> Let the negative silica sol disperse without vigorous agitation.</span>
+            <span><strong>Hold karet forseglet:</strong> La det negative silikasol-klarningsmiddelet spre seg uten kraftig risting.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">2.</span>
-            <span><strong>Prepare Chitosan (+):</strong> When the 12–24 hour window opens in <%= session.fining_state.hours_until_chitosan_window %> hours, add Chitosan to complete charge neutralization and initiate flocculation.</span>
+            <span><strong>Klargjør Chitosan (+):</strong> Når vinduet åpner om <%= session.fining_state.hours_until_chitosan_window %> timer, tilsettes Chitosan for å nøytralisere ladningene og starte flokkering.</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
@@ -100,10 +100,10 @@
           <span class="text-xl leading-none">✨</span>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Optimal Window Open! It has been <%= session.fining_state.hours_since_kieselsol %> hours since Kieselsol was added (<%= session.fining_state.hours_remaining_in_chitosan_window %> hours remaining in the 12–24h window). Add Chitosan [+] now!
+              Optimalt vindu er åpent! Det har gått <%= session.fining_state.hours_since_kieselsol %> timer siden Kieselsol ble tilsatt (<%= session.fining_state.hours_remaining_in_chitosan_window %> timer igjen av 12–24-timersvinduet). Tilsett Chitosan [+] nå!
             </div>
             <div class="text-xs text-base-content/80 mt-1 leading-relaxed">
-              Adding Chitosan (+) creates strong electrostatic bridges with the Kieselsol-coated particles, forming dense flocs that precipitate rapidly to the bottom and start the 7–14 day sediment compaction countdown.
+              Tilsetning av klarningsmiddelet Chitosan skaper sterke elektrostatiske bindinger med de Kieselsol-belagte partiklene, som danner tette flokker som raskt bunnfeller og starter nedtellingen på 7–14 dager for kompakt bunnfall.
             </div>
           </div>
         </div>
@@ -111,11 +111,11 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-success font-bold">1.</span>
-            <span><strong>Add Chitosan (+):</strong> Pour in Chitosan and stir or swirl gently for 30 seconds to disperse without introducing oxygen.</span>
+            <span><strong>Tilsett Chitosan (+):</strong> Hell i Chitosan og rør forsiktig i 30 sekunder for å fordele klarningsmiddelet uten å tilføre oksygen.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-success font-bold">2.</span>
-            <span><strong>Begin Compaction Countdown:</strong> Once Chitosan is added, leave the vessel still to begin the 7–14 day sediment bed compaction timer.</span>
+            <span><strong>Start nedtelling for kompakt bunnfall:</strong> Når Chitosan er tilsatt, settes karet helt i ro for å starte nedtellingen for kompakt bunnfall (7–14 dager).</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
@@ -124,10 +124,10 @@
           <span class="text-xl leading-none">⚠️</span>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Chitosan window overdue: <%= session.fining_state.hours_since_kieselsol %> hours have elapsed since Kieselsol addition. Add Chitosan [+] as soon as possible.
+              Chitosan-vinduet er overskredet: <%= session.fining_state.hours_since_kieselsol %> timer har gått siden tilsetning av Kieselsol. Tilsett Chitosan [+] så snart som mulig.
             </div>
             <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
-              Kieselsol has settled. Adding Chitosan (+) now will complete charge neutralization and bind any remaining suspended particles into tight sediment.
+              Kieselsol har bunnfalt. Tilsetning av klarningsmiddelet Chitosan (+) nå vil fullføre ladningsnøytraliseringen og binde gjenværende svevende partikler til kompakt bunnfall.
             </div>
           </div>
         </div>
@@ -135,11 +135,11 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-warning font-bold">1.</span>
-            <span><strong>Add Chitosan (+):</strong> Add your dose of Chitosan and swirl very gently to mix.</span>
+            <span><strong>Tilsett Chitosan (+):</strong> Tilsett dosen med Chitosan og rør svært forsiktig om for å blande.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-warning font-bold">2.</span>
-            <span><strong>Re-seal Airlock:</strong> Seal and place in a cool location to begin sediment compaction.</span>
+            <span><strong>Sett på gjærlåsen igjen:</strong> Forsegl karet og sett det kjølig for å starte bunnfelling av sedimentet.</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
@@ -147,15 +147,15 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">1.</span>
-            <span><strong>Keep Carboy Completely Still:</strong> Any jostling or lifting will kick up the fluffy sediment bed. If moving is necessary, move 24–48 hours before siphoning.</span>
+            <span><strong>La karet stå helt i ro:</strong> Enhver bevegelse vil virvle opp det løse bunnfallet. Må karet flyttes, gjør det 24–48 timer før heverting.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">2.</span>
-            <span><strong>Cold Crashing (Optional):</strong> Chilling the vessel to 2–4°C accelerates compaction and tightens the sediment layer even faster.</span>
+            <span><strong>Kaldkræsjing (valgfritt):</strong> Å kjøle ned karet til 2–4°C akselererer komprimeringen og gjør bunnfallet enda fastere.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">3.</span>
-            <span><strong>Wait <%= (session.fining_state.days_remaining_to_compact !== undefined && session.fining_state.days_remaining_to_compact > 0) ? (session.fining_state.days_remaining_to_compact + ' more ' + (session.fining_state.days_remaining_to_compact === 1 ? 'day' : 'days') + ' (until Day 14)') : 'for Day 14' %>:</strong> Siphoning is recommended when the sediment is firmly compacted to prevent pulling yeast into the final bottles.</span>
+            <span><strong>Vent <%= (session.fining_state.days_remaining_to_compact !== undefined && session.fining_state.days_remaining_to_compact > 0) ? (session.fining_state.days_remaining_to_compact + ' dager til (til dag 14)') : 'til dag 14' %>:</strong> Heverting anbefales når bunnfallet er fast komprimert for å unngå å dra med gjær i flaskene.</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
@@ -166,10 +166,10 @@
           </svg>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Sediment Bed Compacted (<em>kompakt bunnfall</em>)! Safe to siphon into bottles.
+              Kompakt bunnfall! Trygt å heverte over på flasker.
             </div>
             <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
-              14+ days of compaction have locked the yeast and protein sediment into a dense, solid cake at the bottom of the vessel. You can now siphon clear mead without drawing haze into the final pour.
+              14+ dager med sedimentering har låst gjær- og proteinpartikler i en fast, tett kake i bunnen av karet. Du kan nå heverte klar mjød uten risiko for uklarhet i flaskene.
             </div>
           </div>
         </div>
@@ -177,27 +177,27 @@
         <div class="space-y-2 text-sm text-base-content">
           <div class="flex items-start gap-2">
             <span class="text-success font-bold">1.</span>
-            <span><strong>Sanitize Siphoning Gear:</strong> Prepare your auto-siphon, tubing, and sanitized bottles.</span>
+            <span><strong>Desinfiser hevertutstyr:</strong> Klargjør hevert, slanger og desinfiserte flasker.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-success font-bold">2.</span>
-            <span><strong>Siphon Above the Bed:</strong> Rest the siphon cap slightly above the tight sediment bed. Stop when liquid nears the cake to maintain pure clarity.</span>
+            <span><strong>Hevert over bunnfallet:</strong> Plasser hevertenden litt over det faste bunnfallet. Stopp før væsken når bunnsjiktet for optimal klarhet.</span>
           </div>
         </div>
       <% } else { %>
         <!-- Baseline Aging without fining -->
         <div class="space-y-2 text-sm text-base-content">
           <p class="leading-relaxed">
-            Batch is aging (<em>modning</em>). Keep vessel topped up and airlock intact to prevent oxidation.
+            Brygget er til modning. Hold karet toppet opp og gjærlåsen intakt for å unngå oksidering.
           </p>
           <div class="bg-base-200/50 rounded-lg p-3 border border-base-300 text-xs text-pollen">
-            💡 <strong>Clarification Tip:</strong> If your mead is cloudy from suspended yeast and proteins after fermentation, use a two-component clarifier like <strong>Super-Kleer (Kieselsol [-] + Chitosan [+])</strong>. Adding Kieselsol first followed by Chitosan 12–24 hours later drops haze and starts the 7–14 day sediment compaction countdown for haze-free bottling.
+            💡 <strong>Klarningstips:</strong> Hvis mjøden er uklar av gjær og proteiner etter gjæring, bruk et todelt klarningsmiddel som <strong>Super-Kleer (Kieselsol [-] + Chitosan [+])</strong>. Å tilsette Kieselsol først etterfulgt av Chitosan 12–24 timer senere fjerner uklarhet og starter en 7–14 dagers nedtelling for kompakt bunnfall før flasking.
           </div>
         </div>
       <% } %>
-    <% } else if (session.status === 'Bottled') { %>
+    <% } else if (session.status === 'Bottled' || session.status === 'Flasket') { %>
       <p class="text-sm text-base-content leading-relaxed">
-        Batch is bottled! Store in a cool, dark place to mature.
+        Brygget er flasket! Oppbevar på et kjølig, mørkt sted for modning.
       </p>
     <% } %>
   </div>

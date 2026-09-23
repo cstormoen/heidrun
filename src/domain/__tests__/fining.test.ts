@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	Status,
 	deriveSessionState,
 	type Event,
 	getFiningState,
@@ -171,7 +172,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay3.days_remaining_to_compact).toBe(11);
 		expect(stateDay3.compaction_progress_pct).toBe(Math.round((3 / 14) * 100));
 		expect(stateDay3.safe_to_siphon).toBe(false);
-		expect(stateDay3.status_label).toContain("Day 4 of 14");
+		expect(stateDay3.status_label).toContain("Dag 4 av 14");
 	});
 
 	it("tracks compaction progress during days 7–13 (compacting phase)", () => {
@@ -202,7 +203,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay9.days_compacting).toBe(9);
 		expect(stateDay9.days_remaining_to_compact).toBe(5);
 		expect(stateDay9.safe_to_siphon).toBe(false);
-		expect(stateDay9.status_label).toContain("Day 10 of 14");
+		expect(stateDay9.status_label).toContain("Dag 10 av 14");
 	});
 
 	it("confirms tight sediment bed compaction at Day 14+ and marks safe to siphon", () => {
@@ -234,7 +235,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay14.days_remaining_to_compact).toBe(0);
 		expect(stateDay14.compaction_progress_pct).toBe(100);
 		expect(stateDay14.safe_to_siphon).toBe(true);
-		expect(stateDay14.status_label).toContain("Safe to Siphon");
+		expect(stateDay14.status_label).toContain("trygt å heverte");
 	});
 
 	it("correctly distinguishes Kieselsol and Chitosan when using combo pack inventory item with notes", () => {
@@ -334,7 +335,7 @@ describe("deriveSessionState fining integration", () => {
 		const now = new Date("2026-09-08T02:00:00.000Z").getTime(); // 10 days of compaction
 		const derived = deriveSessionState(baseSession, events, undefined, now);
 
-		expect(derived.status).toBe("Aging");
+		expect(derived.status).toBe(Status.Aging);
 		expect(derived.is_gravity_stable).toBe(true);
 		expect(derived.fining_state).toBeDefined();
 		expect(derived.fining_state?.stage).toBe("sediment_compacting");

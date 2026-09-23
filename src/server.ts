@@ -92,15 +92,21 @@ serve({
 			return htmlResponse(content, isHtmx);
 		}
 
-		// Pantry: View inventory
-		if (req.method === "GET" && url.pathname === "/pantry") {
+		// Stabbur: View inventory
+		if (
+			req.method === "GET" &&
+			(url.pathname === "/stabbur" || url.pathname === "/pantry")
+		) {
 			const items = DAL.getInventoryItems();
 			const content = renderPantryView(items);
 			return htmlResponse(content, isHtmx);
 		}
 
-		// Pantry: Add inventory item
-		if (req.method === "POST" && url.pathname === "/pantry") {
+		// Stabbur: Add inventory item
+		if (
+			req.method === "POST" &&
+			(url.pathname === "/stabbur" || url.pathname === "/pantry")
+		) {
 			const formData = await req.formData();
 			const name = formData.get("name") as string;
 			const category = formData.get("category") as any;
@@ -124,11 +130,15 @@ serve({
 			}
 
 			const content = renderPantryView(DAL.getInventoryItems());
-			return htmlResponse(content, true, { pushUrl: "/pantry" });
+			const pushUrl = url.pathname === "/pantry" ? "/pantry" : "/stabbur";
+			return htmlResponse(content, true, { pushUrl });
 		}
 
-		// Pantry: Edit inventory item
-		if (req.method === "POST" && url.pathname === "/pantry/edit") {
+		// Stabbur: Edit inventory item
+		if (
+			req.method === "POST" &&
+			(url.pathname === "/stabbur/edit" || url.pathname === "/pantry/edit")
+		) {
 			const formData = await req.formData();
 			const idStr = formData.get("id") as string;
 			const id = parseInt(idStr);
@@ -158,11 +168,16 @@ serve({
 			}
 
 			const content = renderPantryView(DAL.getInventoryItems());
-			return htmlResponse(content, true, { pushUrl: "/pantry" });
+			const pushUrl = url.pathname === "/pantry/edit" ? "/pantry" : "/stabbur";
+			return htmlResponse(content, true, { pushUrl });
 		}
 
-		// Pantry: Delete inventory item
-		if (req.method === "DELETE" && url.pathname.match(/^\/pantry\/\d+$/)) {
+		// Stabbur: Delete inventory item
+		if (
+			req.method === "DELETE" &&
+			(url.pathname.match(/^\/stabbur\/\d+$/) ||
+				url.pathname.match(/^\/pantry\/\d+$/))
+		) {
 			const idStr = url.pathname.split("/")[2];
 			const id = parseInt(idStr);
 
@@ -171,7 +186,8 @@ serve({
 			}
 
 			const content = renderPantryView(DAL.getInventoryItems());
-			return htmlResponse(content, true, { pushUrl: "/pantry" });
+			const pushUrl = url.pathname.startsWith("/pantry") ? "/pantry" : "/stabbur";
+			return htmlResponse(content, true, { pushUrl });
 		}
 
 		// Sessions: New session form

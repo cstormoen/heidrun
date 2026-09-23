@@ -6,7 +6,7 @@
   <div class="pb-6">
   <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="ingredients-used-card" open>
     <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
-      Ingredients Used
+      Råvarer brukt
     </summary>
     <div class="collapse-content">
       <ul class="list-disc list-inside text-sm text-base-content mb-2 pt-2">
@@ -32,36 +32,37 @@
               <% } else if (e.data && e.data.note) { %>
                 <%= e.data.note %>
               <% } else { %>
-                Unknown Addition
+                Ukjent tilsetning
               <% } %>
               
               <form hx-post="/sessions/<%= sessionId %>/events/<%= e.id %>/link" hx-target="#main-content" class="mt-1 flex flex-wrap items-center gap-1 p-2 bg-base-200 rounded-md border border-base-300 w-fit">
-                <span class="text-xs font-semibold mr-1">Link item:</span>
+                <span class="text-xs font-semibold mr-1">Koble til vare fra stabburet:</span>
                 <select name="inventory_item_id" class="select select-bordered select-xs w-32" required>
-                  <option value="" disabled selected>Select...</option>
+                  <option value="" disabled selected>Velg vare...</option>
                   <% inventoryList.forEach(function(inv) { %>
-                    <option value="<%= inv.id %>"><%= inv.name %> (Stock: <%= (inv.quantity_on_hand !== undefined && inv.quantity_on_hand !== null ? Number(inv.quantity_on_hand).toFixed(2) : '0.00') %> <%= inv.unit %>)</option>
+                    <option value="<%= inv.id %>"><%= inv.name %> (Lager: <%= (inv.quantity_on_hand !== undefined && inv.quantity_on_hand !== null ? Number(inv.quantity_on_hand).toFixed(2) : '0.00') %> <%= inv.unit %>)</option>
                   <% }); %>
                 </select>
-                <input type="number" step="any" name="quantity" class="input input-bordered input-xs w-16" placeholder="Qty" required value="<%= (e.data && e.data.quantity_used) || '' %>" />
+                <input type="number" step="any" name="quantity" class="input input-bordered input-xs w-16" placeholder="Mengde" required value="<%= (e.data && e.data.quantity_used) || '' %>" />
                 <select name="unit" class="select select-bordered select-xs w-20" required>
                   <option value="g" <%= (e.data && e.data.unit === 'g') ? 'selected' : '' %>>g</option>
                   <option value="kg" <%= (e.data && e.data.unit === 'kg') ? 'selected' : '' %>>kg</option>
                   <option value="ml" <%= (e.data && e.data.unit === 'ml') ? 'selected' : '' %>>ml</option>
                   <option value="L" <%= (e.data && e.data.unit === 'L') ? 'selected' : '' %>>L</option>
-                  <option value="packets" <%= (e.data && e.data.unit === 'packets') ? 'selected' : '' %>>packets</option>
+                  <option value="packets" <%= (e.data && e.data.unit === 'packets') ? 'selected' : '' %>>pakker</option>
                   <option value="oz" <%= (e.data && e.data.unit === 'oz') ? 'selected' : '' %>>oz</option>
                   <option value="lb" <%= (e.data && e.data.unit === 'lb') ? 'selected' : '' %>>lb</option>
-                  <option value="tsp" <%= (e.data && e.data.unit === 'tsp') ? 'selected' : '' %>>tsp</option>
+                  <option value="tsp" <%= (e.data && e.data.unit === 'tsp') ? 'selected' : '' %>>ts</option>
+                  <option value="tbsp" <%= (e.data && e.data.unit === 'tbsp') ? 'selected' : '' %>>ss</option>
                 </select>
-                <button type="submit" class="btn btn-xs btn-primary">Link</button>
+                <button type="submit" class="btn btn-xs btn-primary">Koble</button>
               </form>
             </li>
           <% }); %>
         <% } %>
       </ul>
       <% if (usage.totalCost > 0) { %>
-        <div class="text-sm font-bold text-secondary mt-2 border-t border-base-200 pt-2">Estimated Batch Cost: <%= usage.totalCost.toFixed(2) %> NOK</div>
+        <div class="text-sm font-bold text-secondary mt-2 border-t border-base-200 pt-2">Estimert råvarekostnad: <%= usage.totalCost.toFixed(2) %> NOK</div>
       <% } %>
     </div>
   </details>    

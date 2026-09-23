@@ -1,58 +1,65 @@
 <div>
   <div class="flex items-center justify-between mb-2">
-    <button class="btn btn-sm btn-ghost text-pollen" hx-get="/" hx-target="#main-content" hx-push-url="true">&larr; Back</button>
+    <button class="btn btn-sm btn-ghost text-pollen" hx-get="/" hx-target="#main-content" hx-push-url="true">&larr; Tilbake</button>
     <% if (startDateFormatted) { %>
-      <div class="text-sm text-pollen grid group cursor-default" title="Click or hover to toggle age">
-        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Age: <%= session.age_formatted %></span>
-        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-active:opacity-100">Started: <%= startDateFormatted %></span>
+      <div class="text-sm text-pollen grid group cursor-default" title="Klikk eller hold over for å bytte visning">
+        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Alder: <%= session.age_formatted %></span>
+        <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-active:opacity-100">Startet: <%= startDateFormatted %></span>
       </div>
     <% } else { %>
-      <div class="text-sm text-pollen">Age: <%= session.age_formatted %></div>
+      <div class="text-sm text-pollen">Alder: <%= session.age_formatted %></div>
     <% } %>
   </div>
 
   <div class="flex justify-between items-center mb-2 mt-2">
     <h2 class="text-3xl font-bold text-base-content flex items-center gap-2">
       <%= session.name %>
-      <button class="btn btn-ghost btn-sm text-pollen" onclick="document.getElementById('edit_session_name_modal').showModal()" title="Edit Batch Name">
+      <button class="btn btn-ghost btn-sm text-pollen" onclick="document.getElementById('edit_session_name_modal').showModal()" title="Rediger navn på brygget">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
       </button>
     </h2>
   </div>
 
   <div class="flex flex-wrap items-center gap-2 mb-6">
-    <span class="badge <%= getBadgeClasses(session.status) %>"><%= session.status === 'Aging' ? 'Aging (Modning)' : session.status %></span>
+    <%
+      let statusLabel = session.status || "Planlagt";
+      if (statusLabel === "Planned") statusLabel = "Planlagt";
+      if (statusLabel === "Primary Fermentation") statusLabel = "Primærgjæring";
+      if (statusLabel === "Aging" || statusLabel === "Aging (Modning)") statusLabel = "Modning";
+      if (statusLabel === "Bottled") statusLabel = "Flasket";
+    %>
+    <span class="badge <%= getBadgeClasses(session.status) %>"><%= statusLabel %></span>
     <% if (session.is_chemically_stabilized) { %>
-      <span class="badge bg-apothecary-teal text-white border-apothecary-teal" id="badge-chemically-stabilized">Chemically Stabilized</span>
+      <span class="badge bg-apothecary-teal text-white border-apothecary-teal" id="badge-chemically-stabilized">Kjemisk stabilisert</span>
     <% } %>
     <% if (session.is_gravity_stable) { %>
-      <span class="badge badge-info text-white gap-1" title="Primary fermentation complete (identical SG readings over 7+ days)">
+      <span class="badge badge-info text-white gap-1" title="Hovedgjæring fullført (identisk SG-måling over 7+ dager)">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
         </svg>
-        Gravity Stable
+        Stabil SG
       </span>
     <% } %>
     <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
-      <span class="badge badge-warning text-black" id="badge-fining-stage">Fining: Step 1 (Kieselsol)</span>
+      <span class="badge badge-warning text-black" id="badge-fining-stage">Fining/Klarning: Trinn 1 (Kieselsol)</span>
     <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
-      <span class="badge badge-success text-white" id="badge-fining-stage">Chitosan Window Open (12–24h)</span>
+      <span class="badge badge-success text-white" id="badge-fining-stage">Chitosan-vindu åpent (12–24t)</span>
     <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
-      <span class="badge badge-warning text-black" id="badge-fining-stage">Chitosan Overdue (&gt;24h)</span>
+      <span class="badge badge-warning text-black" id="badge-fining-stage">Chitosan forsinket (&gt;24t)</span>
     <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
-      <span class="badge badge-info text-white" id="badge-fining-stage">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+      <span class="badge badge-info text-white" id="badge-fining-stage">Bunnfall komprimeres (Dag <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
     <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
-      <span class="badge badge-success text-white" id="badge-fining-stage">Sediment Compacted</span>
+      <span class="badge badge-success text-white" id="badge-fining-stage">Kompakt bunnfall</span>
     <% } %>
   </div>
 
   <div class="stats shadow w-full mb-6 flex-wrap bg-base-100 border border-base-300">
     <div class="stat place-items-center">
-      <div class="stat-title text-pollen">Original Gravity</div>
+      <div class="stat-title text-pollen">Start-SG</div>
       <div class="stat-value text-2xl text-secondary"><%= ogFormatted %></div>
     </div>
     <div class="stat place-items-center">
-      <div class="stat-title text-pollen">Current SG</div>
+      <div class="stat-title text-pollen">Nåværende SG</div>
       <div class="stat-value text-2xl text-secondary flex items-center gap-2">
         <%= currentSgFormatted %>
         <% if (session.current_sg && session.original_sg && session.current_sg < session.original_sg) { %>
@@ -61,11 +68,11 @@
       </div>
     </div>
     <div class="stat place-items-center">
-      <div class="stat-title text-pollen">1/3 Sugar Break</div>
+      <div class="stat-title text-pollen">1/3-sukkerbrudd</div>
       <div class="stat-value text-2xl text-secondary flex flex-row items-center gap-1">
         <span><%= sugarBreakFormatted %></span>
         <% if (session.is_sugar_break_reached) { %>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" title="Break reached" aria-label="Break reached">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" title="1/3-sukkerbrudd nådd" aria-label="1/3-sukkerbrudd nådd">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         <% } %>        
@@ -73,27 +80,27 @@
       <% if (session.original_sg) { %>
         <div class="stat-desc text-xs <%= session.is_sugar_break_reached ? 'text-warning font-semibold flex items-center justify-center' : 'text-pollen' %>">
           <% if (!session.is_sugar_break_reached) { %>
-            Target threshold
+            Målgrense
           <% } %>
         </div>
       <% } %>
     </div>
     <div class="stat place-items-center">
-      <div class="stat-title text-pollen">Calculated ABV</div>
+      <div class="stat-title text-pollen">Beregnet ABV</div>
       <div class="stat-value text-2xl text-secondary"><%= session.abv %>%</div>
     </div>
     <% if (session.estimated_batch_volume !== undefined) { %>
-      <div class="stat place-items-center" title="Estimated initial batch volume derived from logged honey/sugars and Original Gravity (~300 gravity points per kg/L). Excludes racking losses.">
-        <div class="stat-title text-pollen">Est. Volume</div>
+      <div class="stat place-items-center" title="Estimert opprinnelig bryggvolum basert på logget honning/sukker og start-SG (~300 SG-poeng per kg/L). Ekskluderer omstikkingstap.">
+        <div class="stat-title text-pollen">Estimert volum</div>
         <div class="stat-value text-2xl text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</div>
       </div>
     <% } %>
     <% if (session.current_ph !== undefined) { %>
       <div class="stat place-items-center">
-        <div class="stat-title text-pollen">Current pH</div>
+        <div class="stat-title text-pollen">Nåværende pH</div>
         <div class="stat-value text-2xl <%= (session.current_ph < 3.2 || session.current_ph > 3.8) ? 'text-warning' : 'text-secondary' %>"><%= currentPhFormatted %></div>
         <% if (session.current_ph < 3.2 || session.current_ph > 3.8) { %>
-          <div class="stat-desc text-xs text-warning font-semibold">Outside target (3.2–3.8)</div>
+          <div class="stat-desc text-xs text-warning font-semibold">Utenfor målområde (3,2–3,8)</div>
         <% } %>
       </div>
     <% } %>
@@ -109,10 +116,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
           </svg>
-          pH Advisory: Outside Optimal Range
+          pH-veiledning: Utenfor optimalt område
         </span>
         <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5 mr-2">
-          <%= session.current_ph > 3.8 ? 'pH High (> 3.8)' : 'pH Low (< 3.2)' %>
+          <%= session.current_ph > 3.8 ? 'pH høy (> 3,8)' : 'pH lav (< 3,2)' %>
         </span>
       </summary>
       <div class="collapse-content">
@@ -121,13 +128,13 @@
           <span class="text-xl leading-none">⚠️</span>
           <div>
             <div class="text-sm font-bold text-base-content">
-              Current pH is <%= currentPhFormatted %>. The optimal pH range for mead is <strong>3.2 to 3.8</strong>.
+              Nåværende pH er <%= currentPhFormatted %>. Det optimale pH-området for mjød er <strong>3,2 til 3,8</strong>.
             </div>
             <div class="text-xs text-base-content/90 mt-1 leading-relaxed">
               <% if (session.current_ph > 3.8) { %>
-                A pH reading of <%= currentPhFormatted %> exceeds the recommended threshold of 3.8. Adjusting acidity will protect against spoilage and enhance flavor.
+                En pH-måling på <%= currentPhFormatted %> overskrider anbefalt grense på 3,8. Å justere syrligheten beskytter mot infeksjon/forringelse og forbedrer smaksbalansen.
               <% } else { %>
-                If the pH value drops below <strong>3.2</strong>, the environment becomes <strong>too acidic for the yeast</strong>.
+                Dersom pH-verdien faller under <strong>3,2</strong>, blir miljøet <strong>for surt for gjæren</strong>.
               <% } %>
             </div>
           </div>
@@ -137,21 +144,21 @@
           <!-- Key Impacts of a pH Below 3.2 -->
           <div class="mb-4">
             <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
-              <span>⚠️</span> Key Impacts of a pH Below 3.2
+              <span>⚠️</span> Viktige konsekvenser ved pH under 3,2
             </h4>
             <div class="space-y-2 text-sm text-base-content">
               <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
                 <span class="text-warning font-bold">1.</span>
                 <div>
-                  <strong>Yeast Stress &amp; Stalled Fermentation:</strong>
-                  The optimal pH range for mead is <strong>3.2 to 3.8</strong>. When the pH drops below 3.2, it becomes too acidic for the yeast, causing cell stress that can severely slow down or completely halt fermentation (<em>stuck fermentation</em>).
+                  <strong>Gjærstress &amp; stagnert gjæring:</strong>
+                  Det optimale pH-området for mjød er <strong>3,2 til 3,8</strong>. Når pH faller under 3,2 blir miljøet for surt for gjæren, noe som skaper cellestress som kan bremse kraftig eller stanse gjæringen fullstendig (<em>fastlåst gjæring</em>).
                 </div>
               </div>
               <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
                 <span class="text-warning font-bold">2.</span>
                 <div>
-                  <strong>Harsh Taste:</strong>
-                  Excessive acid can make the mead taste overly sharp or sour, masking delicate honey aromatics.
+                  <strong>Skarp smak:</strong>
+                  For mye syre kan gjøre mjøden altfor skarp eller sur, noe som overdøver de delikate honningaromaene.
                 </div>
               </div>
             </div>
@@ -160,24 +167,24 @@
           <!-- How to Raise the pH Back to Safety -->
           <div class="bg-base-200/70 rounded-lg p-4 border border-base-300">
             <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
-              <span>⚖️</span> How to Raise the pH Back to Safety
+              <span>⚖️</span> Hvordan heve pH tilbake til trygt nivå
             </h4>
             <p class="text-sm text-base-content mb-2 leading-relaxed">
-              To bring the pH back into the optimal <strong>3.2–3.8</strong> range, you can neutralize the excess acid using an alkaline buffering agent:
+              For å bringe pH tilbake i det optimale <strong>3,2–3,8</strong>-området, kan du nøytralisere overskuddssyre med et basisk buffermiddel:
             </p>
             <ul class="list-disc list-inside text-sm text-base-content space-y-1 ml-1 mb-3">
-              <li><strong>Chalk (Calcium Carbonate / <em>Kritt</em>):</strong> Add small amounts of chalk until the pH rises to 3.2 or above.</li>
-              <li><strong>Potassium Bicarbonate or Baking Soda (<em>Natron</em>):</strong> Adding calcium or sodium/potassium bicarbonate will also safely raise the pH and protect the yeast.</li>
-              <li><em>Tip:</em> Always dissolve the addition thoroughly and re-test with pH strips or a pH meter before adding more.</li>
+              <li><strong>Kritt (Kalsiumkarbonat):</strong> Tilsett små mengder kritt til pH stiger til 3,2 eller over.</li>
+              <li><strong>Kaliumbikarbonat eller natron:</strong> Tilsetning av kalsium- eller natrium-/kaliumbikarbonat vil også trygt heve pH og skåne gjæren.</li>
+              <li><em>Tips:</em> Løs alltid tilsetningen godt opp og mål på nytt med pH-strips eller pH-meter før du tilsetter mer.</li>
             </ul>
 
             <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300/80">
               <div class="text-xs text-pollen">
-                💡 <strong>Dosage tip:</strong> Add in small increments and stir gently; re-measure pH before adding more.
+                💡 <strong>Doseringstips:</strong> Tilsett i små mengder og rør forsiktig; kontrollmål pH før mer has i.
               </div>
               <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openBufferModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                Log Buffer Addition
+                Loggfør buffertilsetning
               </button>
             </div>
           </div>
@@ -185,21 +192,21 @@
           <!-- Why pH Matters During Aging -->
           <div class="mb-4">
             <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
-              <span>🔬</span> Why pH Matters During Aging
+              <span>🔬</span> Hvorfor pH er viktig under modning
             </h4>
             <div class="space-y-2 text-sm text-base-content">
               <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
                 <span class="text-warning font-bold">1.</span>
                 <div>
-                  <strong>Microbial Protection &amp; Sulfite Efficiency:</strong>
-                  A pH above 3.8 leaves the mead more vulnerable to bacterial spoilage and infection. Furthermore, free sulfur dioxide (SO₂ / Campden) is significantly less effective at higher pH levels, meaning higher amounts of sulfite are required to maintain the same antioxidant and antibacterial shield.
+                  <strong>Mikrobiell beskyttelse &amp; sulfitteffektivitet:</strong>
+                  En pH over 3,8 gjør mjøden mer sårbar for bakterieinfeksjon. I tillegg er fritt svoveldioksid (SO₂ / Campden) vesentlig mindre effektivt ved høyere pH, noe som krever større mengder sulfitt for å opprettholde samme antioksiderende og antibakterielle beskyttelse.
                 </div>
               </div>
               <div class="flex items-start gap-2 bg-base-200/50 rounded-lg p-3 border border-base-300">
                 <span class="text-warning font-bold">2.</span>
                 <div>
-                  <strong>Flavor &amp; Balance:</strong>
-                  Acidity provides essential structure and crispness that balances residual sweetness and honey body; a pH above 3.8 can leave the mead tasting flat or flabby.
+                  <strong>Smak &amp; balanse:</strong>
+                  Syrlighet gir viktig struktur og friskhet som balanserer restsødme og honningkropp; en pH over 3,8 kan gjøre at mjøden smaker flatt eller tamt.
                 </div>
               </div>
             </div>
@@ -208,23 +215,23 @@
           <!-- Recommended Adjustment -->
           <div class="bg-base-200/70 rounded-lg p-4 border border-base-300">
             <h4 class="text-sm font-bold text-base-content mb-2 flex items-center gap-1.5">
-              <span>⚖️</span> Recommended Adjustment
+              <span>⚖️</span> Anbefalt justering
             </h4>
             <p class="text-sm text-base-content mb-2 leading-relaxed">
-              To lower the pH into the safe, balanced target zone (&le; 3.8), you can adjust the batch using <strong>malic acid (<em>eplesyre</em>)</strong>:
+              For å senke pH ned i det trygge og balanserte målområdet (&le; 3,8), kan du justere brygget med <strong>eplesyre (malic acid)</strong>:
             </p>
             <ul class="list-disc list-inside text-sm text-base-content space-y-1 ml-1 mb-3">
-              <li><strong>Dosage:</strong> Add approximately <strong>1 gram of malic acid per liter of mead</strong> to lower the pH down to <strong>3.8 or below</strong>.</li>
-              <li><em>Tip:</em> Test with your pH strips after mixing thoroughly to ensure you hit the target 3.2–3.8 window without over-acidifying.</li>
+              <li><strong>Dosering:</strong> Tilsett ca. <strong>1 gram eplesyre per liter mjød</strong> for å senke pH ned til <strong>3,8 eller lavere</strong>.</li>
+              <li><em>Tips:</em> Test med pH-strips etter grundig omrøring for å sikre at du treffer målområdet 3,2–3,8 uten å oversyre.</li>
             </ul>
 
             <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300/80">
               <div class="text-xs text-pollen">
-                💡 <strong>Dosage tip:</strong> Add incrementally and stir gently; re-measure pH before adding more.
+                💡 <strong>Doseringstips:</strong> Tilsett trinnvis og rør forsiktig; mål pH på nytt før du tilsetter mer.
               </div>
               <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openMalicAcidModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                Log Malic Acid Addition
+                Loggfør eplesyretilsetning
               </button>
             </div>
           </div>
@@ -237,7 +244,7 @@
   <% if (chartBundle && chartBundle.sgData && chartBundle.sgData.length > 0) { %>
     <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="fermentation-curve-card" open ontoggle="if (this.open && window.fermentationChartInstance) { window.fermentationChartInstance.resize(); }">
       <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
-        Fermentation Curve
+        Gjæringskurve
       </summary>
       <div class="collapse-content">
         <div class="w-full relative pt-2" style="height: 300px;">
@@ -261,7 +268,7 @@
           data: {
             datasets: [
               {
-                label: 'Specific Gravity',
+                label: 'Spesifikk tetthet (SG)',
                 data: data.sgData,
                 borderColor: '#E5A93C',
                 backgroundColor: '#E5A93C',
@@ -289,12 +296,12 @@
             scales: {
               x: {
                 type: 'linear',
-                title: { display: true, text: 'Days in Fermentation' }
+                title: { display: true, text: 'Dager i gjæring' }
               },
               ySG: {
                 type: 'linear',
                 position: 'left',
-                title: { display: true, text: 'Specific Gravity' },
+                title: { display: true, text: 'Spesifikk tetthet' },
                 ticks: {
                   callback: function(value) { return value.toFixed(3); }
                 }
@@ -324,13 +331,13 @@
   <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="backsweetening-guidance-card" open>
     <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
       <% if (session.is_chemically_stabilized) { %>
-        <span>Backsweetening Guidance (Ettersøting)</span>
+        <span>Ettersøting</span>
       <% } else { %>
         <span class="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
           </svg>
-          Backsweetening Guidance (Locked)
+          Ettersøting (Låst)
         </span>
       <% } %>
     </summary>
@@ -339,7 +346,7 @@
       <% if (session.is_chemically_stabilized) { %>
         <% if (session.backsweetening_events && session.backsweetening_events.length > 0) { %>
           <div class="mb-4">
-            <div class="text-xs font-semibold uppercase tracking-wider text-pollen mb-2">Logged Backsweetening Events</div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-pollen mb-2">Loggførte ettersøtinger</div>
             <div class="space-y-2">
               <% session.backsweetening_events.forEach(function(b) { %>
                 <div class="bg-base-200/70 border border-base-300 rounded-lg p-3">
@@ -358,17 +365,17 @@
                   <div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-base-300/60 text-xs">
                     <% if (b.measured_sg_delta !== undefined) { %>
                       <span class="font-medium">
-                        Measured SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %>
+                        Målt SG: <%= b.measured_sg_before ? b.measured_sg_before.toFixed(3) : '' %> &rarr; <%= b.measured_sg_after ? b.measured_sg_after.toFixed(3) : '' %>
                         (<%= b.measured_sg_delta >= 0 ? '+' : '' %><%= b.measured_sg_delta.toFixed(3) %> SG)
                       </span>
                     <% } else if (b.measured_sg_before !== undefined) { %>
                       <span class="badge badge-sm badge-ghost text-pollen">
-                        Pre-sweetening SG: <%= b.measured_sg_before.toFixed(3) %> (Awaiting post-sweetening reading)
+                        SG før søting: <%= b.measured_sg_before.toFixed(3) %> (Venter på måling etter søting)
                       </span>
                     <% } %>
                     <% if (b.estimated_sg_delta !== undefined) { %>
-                      <span class="text-pollen font-medium" title="Theoretical increase based on sweetener quantity and estimated initial batch volume (~<%= (session.estimated_batch_volume || 10).toFixed(1) %> L)">
-                        Approx. SG Increase: <strong class="text-secondary">+<%= b.estimated_sg_delta.toFixed(3) %></strong>
+                      <span class="text-pollen font-medium" title="Teoretisk økning basert på søtningsmengde og estimert bryggvolum (~<%= (session.estimated_batch_volume || 10).toFixed(1) %> L)">
+                        Beregnet SG-økning: <strong class="text-secondary">+<%= b.estimated_sg_delta.toFixed(3) %></strong>
                       </span>
                     <% } %>
                   </div>
@@ -378,21 +385,21 @@
           </div>
         <% } else { %>
           <p class="text-sm text-base-content mb-3 leading-relaxed">
-            Batch is <strong>chemically stabilized</strong> with both Potassium Metabisulfite (Campden) and Potassium Sorbate (Sorbistat). Yeast reproduction is safely inhibited, preventing renewed fermentation or bottle bombs when sugars are added.
+            Brygget er <strong>kjemisk stabilisert</strong> med både kaliummetabisulfitt (Campden) og kaliumsorbat (Sorbistat). Gjærformering er trygt hemmet, noe som forhindrer ny gjæring eller farlige flaskebomber når sukker tilsettes.
           </p>
         <% } %>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-center">
           <div class="bg-base-200/60 rounded-lg p-2">
-            <div class="text-xs text-pollen">Dry</div>
+            <div class="text-xs text-pollen">Tørr</div>
             <div class="text-sm font-bold text-secondary">&lt; 1.006</div>
           </div>
           <div class="bg-base-200/60 rounded-lg p-2">
-            <div class="text-xs text-pollen">Semi-Sweet</div>
+            <div class="text-xs text-pollen">Halvtørr</div>
             <div class="text-sm font-bold text-secondary">1.006 – 1.015</div>
           </div>
           <div class="bg-base-200/60 rounded-lg p-2">
-            <div class="text-xs text-pollen">Sweet</div>
+            <div class="text-xs text-pollen">Søt</div>
             <div class="text-sm font-bold text-secondary">1.015 – 1.025</div>
           </div>
           <div class="bg-base-200/60 rounded-lg p-2">
@@ -403,38 +410,38 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
           <div class="text-xs text-pollen leading-snug">
-            <div>💡 <strong>Dosage tip:</strong> Adding ~35 g honey per 1 L of must increases specific gravity by approximately +0.010.</div>
+            <div>💡 <strong>Doseringstips:</strong> Tilsetning av ~35 g honning per 1 L mjød øker spesifikk tetthet med ca. +0,010.</div>
             <% if (session.estimated_batch_volume !== undefined) { %>
-              <div class="text-base-content/70 mt-0.5">Calculated batch volume: <strong class="text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</strong> (initial must size; actual volume may be lower due to racking losses and sampling).</div>
+              <div class="text-base-content/70 mt-0.5">Beregnet bryggvolum: <strong class="text-secondary">~<%= session.estimated_batch_volume.toFixed(1) %> L</strong> (opprinnelig målstørrelse; reelt volum kan være lavere grunnet omstikkingstap og prøvetaking).</div>
             <% } %>
           </div>
           <button type="button" class="btn btn-sm btn-primary gap-1" onclick="openBacksweetenModal()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            <%= (session.backsweetening_events && session.backsweetening_events.length > 0) ? 'Add More Sweetener' : 'Log Backsweetening' %>
+            <%= (session.backsweetening_events && session.backsweetening_events.length > 0) ? 'Tilsett mer søtning' : 'Loggfør ettersøting' %>
           </button>
         </div>
       <% } else { %>
         <p class="text-sm text-base-content mb-2 leading-relaxed">
-          <strong>Chemical stabilization is required before backsweetening.</strong> Adding honey or sugars without stabilizers will likely restart fermentation with active or dormant yeast, risking uncontrolled ABV and dangerous <strong>bottle bombs</strong>.
+          <strong>Kjemisk stabilisering er påkrevd før ettersøting.</strong> Tilsetning av honning eller sukker uten stabilisatorer vil sannsynligvis vekke gjæren til live igjen, med fare for ukontrollert alkoholprosent og livsfarlige <strong>flaskebomber</strong>.
         </p>
         <p class="text-xs text-pollen mb-3 leading-relaxed">
-          To safely unlock backsweetening guidance, log an Addition Event containing stabilizer ingredients: <strong>Campden (Potassium Metabisulfite)</strong> + <strong>Sorbistat (Potassium Sorbate)</strong>.
+          For å låse opp veiledning for ettersøting, loggfør en tilsetning med stabiliseringsmidler: <strong>Campden (kaliummetabisulfitt)</strong> + <strong>Sorbistat (kaliumsorbat)</strong>.
         </p>
         <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-warning/20">
           <div class="text-xs">
             <% if (session.is_gravity_stable) { %>
               <span class="text-success font-medium flex items-center gap-1">
-                ✓ Gravity is stable over 7+ days. Log stabilizers to proceed with sweetening.
+                ✓ Spesifikk tetthet er stabil over 7+ dager. Loggfør stabiliseringsmidler for å gå videre med søting.
               </span>
             <% } else { %>
               <span class="text-pollen flex items-center gap-1">
-                ⏳ Gravity stability not confirmed (needs 2 identical SG readings 7+ days apart).
+                ⏳ Stabil spesifikk tetthet er ikke bekreftet (krever 2 like SG-målinger med 7+ dagers mellomrom).
               </span>
             <% } %>
           </div>
           <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openStabilizerModal()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            Log Stabilizer Addition
+            Loggfør stabilisering
           </button>
         </div>
       <% } %>
@@ -445,13 +452,13 @@
   <details class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm mb-8" id="clarification-fining-card" open>
     <summary class="collapse-title text-base-content text-lg font-bold flex items-center gap-2 cursor-pointer select-none">
       <% if (session.is_racked) { %>
-        <span>Clarification &amp; Fining Compaction</span>
+        <span>Fining/Klarning</span>
       <% } else { %>
         <span class="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
           </svg>
-          Clarification &amp; Fining Compaction (Locked)
+          Fining/Klarning (Låst)
         </span>
       <% } %>
     </summary>
@@ -459,14 +466,14 @@
 
       <p class="text-sm text-base-content mb-3 leading-relaxed">
         <% if (!session.is_racked) { %>
-          <strong>Clarification is first recommended after racking.</strong> Transferring the mead off the heavy primary sediment bed (gross lees) prevents fining agents from being wasted on bulk yeast cake. After racking into secondary, dual-component clarifiers like <strong>Super-Kleer</strong> use opposite electrostatic charges (<strong>Kieselsol [-]</strong> first, followed by <strong>Chitosan [+]</strong> 12–24 hours later) to drop fine suspended haze and initiate the <strong>7 to 14 day sediment compaction countdown</strong> (*bunnfall*).
+          <strong>Klarning anbefales først etter omstikking.</strong> Ved å stikke mjøden om vekk fra det grove bunnfallet (hovedbunnfall/bærme) unngår man at klarningsmiddelet kastes bort på gjærkaken. Etter omstikking til sekundærkar bruker todelte klarningsmiddel som <strong>Super-Kleer</strong> motsatte elektrostatiske ladninger (<strong>Kieselsol [-]</strong> først, etterfulgt av <strong>Chitosan [+]</strong> 12–24 timer senere) for å felle ut fine svevepartikler og starte en <strong>7 til 14 dagers nedtelling for kompakt bunnfall</strong>.
         <% } else { %>
-          After fermentation and chemical stabilization, suspended yeast cells and proteins leave the mead cloudy. Dual-component clarifiers like <strong>Super-Kleer</strong> use opposite electrostatic charges: <strong>Kieselsol [-]</strong> is added first, followed by <strong>Chitosan [+]</strong> 12–24 hours later to flocculate particles and initiate a <strong>7 to 14 day sediment compaction countdown</strong> (*bunnfall*).
+          Etter gjæring og kjemisk stabilisering gjør svevende gjærceller og proteiner mjøden tåkete. Todelte klarningsmiddel som <strong>Super-Kleer</strong> bruker motsatte elektrostatiske ladninger: <strong>Kieselsol [-]</strong> tilsettes først, etterfulgt av <strong>Chitosan [+]</strong> 12–24 timer senere for å flokkulere partikler og starte en <strong>7 til 14 dagers nedtelling for kompakt bunnfall</strong>.
         <% } %>
       </p>
 
       <p class="text-sm text-base-content mb-3 leading-relaxed">
-        Cold crashing the carboy (2–4°C) accelerates sediment bed compaction and ensures a tight, disturbance-resistant cake.
+        Kaldkræsjing av ballongen (2–4°C) akselererer komprimeringen av bunnfallet og sikrer en fast kake som tåler bevegelse.
       </p>
 
       <!-- Two-Component Schedule Grid -->
@@ -476,18 +483,18 @@
           <div class="flex items-center justify-between mb-1">
             <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
               <span class="badge badge-xs <%= session.fining_state && session.fining_state.kieselsol_event ? 'badge-success' : 'badge-pollen' %>">1</span>
-              Component 1: Kieselsol [-]
+              Trinn 1: Kieselsol [-]
             </div>
           </div>
           <div class="text-xs text-pollen leading-snug">
-            Negatively charged silica sol binds positively charged yeast proteins. Disperses through the mead over 12–24 hours.
+            Negativt ladet silikasol binder positivt ladede gjærproteiner. Fordeler seg i mjøden over 12–24 timer.
           </div>
           <% if (session.fining_state && session.fining_state.kieselsol_time) { %>
             <div class="text-xs text-success mt-2 font-medium">
-              ✓ Added <%= formatDateTimeForDisplay(session.fining_state.kieselsol_time) %>
+              ✓ Tilsatt <%= formatDateTimeForDisplay(session.fining_state.kieselsol_time) %>
             </div>
             <% } else { %>
-              <div class="text-xs text-pollen font-medium">Pending</div>            
+              <div class="text-xs text-pollen font-medium">Venter</div>            
           <% } %>
         </div>
 
@@ -496,20 +503,20 @@
           <div class="flex items-center justify-between mb-1">
             <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
               <span class="badge badge-xs <%= session.fining_state && session.fining_state.chitosan_event ? 'badge-success' : 'badge-pollen' %>">2</span>
-              Component 2: Chitosan [+]
+              Trinn 2: Chitosan [+]
             </div>
             <% if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
-              <span class="text-xs text-success font-semibold">Ready to Add!</span>
+              <span class="text-xs text-success font-semibold">Klar til tilsetning!</span>
             <% } else if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
-              <span class="text-xs text-warning font-semibold">Wait <%= session.fining_state.hours_until_chitosan_window %>h</span>
+              <span class="text-xs text-warning font-semibold">Vent <%= session.fining_state.hours_until_chitosan_window %>t</span>
             <% } %>
           </div>
           <div class="text-xs text-pollen leading-snug">
-            Positively charged polymer neutralizes remaining charges and creates heavy flocs that precipitate rapidly to the bottom.
+            Positivt ladet polymer nøytraliserer gjenværende ladninger og danner tunge flokker som raskt bunnfeller.
           </div>
           <% if (session.fining_state && session.fining_state.chitosan_time) { %>
             <div class="text-xs text-success mt-2 font-medium">
-              ✓ Added <%= formatDateTimeForDisplay(session.fining_state.chitosan_time) %>
+              ✓ Tilsatt <%= formatDateTimeForDisplay(session.fining_state.chitosan_time) %>
             </div>
           <% } %>
         </div>
@@ -520,32 +527,32 @@
         <div class="bg-base-200/80 rounded-lg p-4 border border-base-300 mb-4" id="sediment-compaction-timer">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h4 class="font-bold text-sm text-base-content flex items-center gap-1.5">
-              Sediment Bed Compaction Timer (<em>Bunnfall-komprimering</em>)
+              Nedtelling for kompakt bunnfall
             </h4>
             <% if (session.fining_state.safe_to_siphon) { %>
-              <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Safe to Siphon into Bottles</span>
+              <span class="badge badge-success text-white text-xs font-semibold px-2 py-0.5">Trygt å heverte på flaske</span>
             <% } else { %>
-              <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Sediment Settling (Do Not Siphon)</span>
+              <span class="badge badge-warning text-black text-xs font-semibold px-2 py-0.5">Bunnfall bunnfeller (ikke hevert ennå)</span>
             <% } %>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-center">
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
-              <div class="text-xs text-pollen">Compacting Days</div>
-              <div class="text-lg font-bold text-secondary">Day <%= (session.fining_state.days_compacting || 0) + 1 %></div>
+              <div class="text-xs text-pollen">Dager med sedimentering</div>
+              <div class="text-lg font-bold text-secondary">Dag <%= (session.fining_state.days_compacting || 0) + 1 %></div>
             </div>
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
-              <div class="text-xs text-pollen">Days Remaining</div>
-              <div class="text-lg font-bold text-secondary"><%= session.fining_state.days_remaining_to_compact %> days</div>
+              <div class="text-xs text-pollen">Dager igjen</div>
+              <div class="text-lg font-bold text-secondary"><%= session.fining_state.days_remaining_to_compact %> dager</div>
             </div>
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
-              <div class="text-xs text-pollen">Compaction Progress</div>
+              <div class="text-xs text-pollen">Fremdrift</div>
               <div class="text-lg font-bold text-secondary"><%= session.fining_state.compaction_progress_pct %>%</div>
             </div>
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
-              <div class="text-xs text-pollen">Siphoning Safety</div>
+              <div class="text-xs text-pollen">Hevertsikkerhet</div>
               <div class="text-sm font-bold <%= session.fining_state.safe_to_siphon ? 'text-success' : 'text-warning' %>">
-                <%= session.fining_state.safe_to_siphon ? 'Safe & Clear' : 'Haze Risk' %>
+                <%= session.fining_state.safe_to_siphon ? 'Trygg & klar' : 'Fare for uklarhet' %>
               </div>
             </div>
           </div>
@@ -553,23 +560,23 @@
           <!-- Progress Bar with Milestones -->
           <div class="space-y-1 mb-3">
             <div class="flex justify-between text-xs text-pollen font-medium">
-              <span>Day 0: Flocculation</span>
-              <span>Day 7: Loose Bed Settled</span>
-              <span>Day 14: Tight Compaction</span>
+              <span>Dag 0: Flokkering</span>
+              <span>Dag 7: Løst bunnfall</span>
+              <span>Dag 14: Kompakt bunnfall</span>
             </div>
             <progress class="progress progress-secondary w-full" value="<%= session.fining_state.compaction_progress_pct %>" max="100"></progress>
           </div>
 
           <div class="text-xs leading-relaxed">
             <% if (session.fining_state.sediment_phase === 'loose') { %>
-              <span class="text-warning font-semibold">⚠️ Days 0–6 (Loose Bed):</span>
-              The sediment bed is fluffy and loose. The slightest movement or siphoning will draw haze into the pour. Keep the vessel stationary.
+              <span class="text-warning font-semibold">⚠️ Dag 0–6 (Løst bunnfall):</span>
+              Bunnfallet er porøst og løst. Den minste bevegelse eller heverting vil dra uklarhet inn i flaskene. La karet stå helt i ro.
             <% } else if (session.fining_state.sediment_phase === 'compacting') { %>
-              <span class="font-semibold">Days 7–13 (Compacting):</span>
-              The sediment bed is compressing into a tighter layer. For maximum crystal clarity and haze-free pouring, wait until Day 14 for the sediment bed to reach full density.
+              <span class="font-semibold">Dag 7–13 (Komprimeres):</span>
+              Bunnfallet presses sammen til et tettere lag. For krystallklar mjød, vent til dag 14 slik at bunnfallet når full fasthet.
             <% } else { %>
-              <span class="text-success font-semibold">✓ Day 14+ (Compacted):</span>
-              The sediment bed is compressed into a firm layer (*kompakt bunnfall*) at the bottom. It is now safe to siphon into bottles without pulling haze into the final pour.
+              <span class="text-success font-semibold">✓ Dag 14+ (Kompakt bunnfall):</span>
+              Bunnfallet er komprimert til et fast lag i bunnen. Det er nå trygt å heverte over på flasker uten å dra med uklarhet.
             <% } %>
           </div>
         </div>
@@ -580,25 +587,25 @@
           <% if (!session.is_racked) { %>
             <button type="button" class="btn btn-sm btn-warning gap-1" onclick="document.getElementById('event-type-select').value='racking'; openAddEventModal();">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-              Log Racking
+              Loggfør omstikking
             </button>
           <% } %>
           <% if (!session.fining_state || session.fining_state.stage === 'none' || session.fining_state.stage === 'chitosan_overdue') { %>
             <button type="button" class="btn btn-sm btn-warning gap-1" onclick="openKieselsolModal()">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              Log Kieselsol [-]
+              Loggfør Kieselsol [-]
             </button>
           <% } %>
           <% if (!session.fining_state || session.fining_state.stage === 'kieselsol_added' || session.fining_state.stage === 'chitosan_ready' || session.fining_state.stage === 'chitosan_overdue') { %>
             <button type="button" class="btn btn-sm <%= session.fining_state && session.fining_state.stage === 'chitosan_ready' ? 'btn-success text-white' : 'btn-secondary' %> gap-1" onclick="openChitosanModal()">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              Log Chitosan [+]
+              Loggfør Chitosan [+]
             </button>
           <% } %>
           <% if (session.fining_state && session.fining_state.safe_to_siphon) { %>
             <button type="button" class="btn btn-sm btn-success text-white gap-1" onclick="document.getElementById('event-type-select').value='bottling'; openAddEventModal();">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-              Log Bottling
+              Loggfør flasking
             </button>
           <% } %>
         </div>
@@ -607,10 +614,10 @@
   </details>
 
   <div class="flex items-center justify-between mb-4">
-    <h3 id="event-history-title" class="text-xl font-bold text-base-content scroll-mt-4">Event History</h3>
+    <h3 id="event-history-title" class="text-xl font-bold text-base-content scroll-mt-4">Logg</h3>
     <button type="button" class="btn btn-primary btn-sm gap-1" onclick="openAddEventModal()">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-      Log Event
+      Loggfør hendelse
     </button>
   </div>
 
@@ -637,7 +644,16 @@
             </div>
             <div class="timeline-end timeline-box bg-base-100 border-base-300 p-4 w-full justify-self-stretch flex items-center gap-3 shadow-md my-2 mx-0">
               <div class="flex flex-col flex-grow min-w-0">
-                <span class="font-bold text-sm uppercase text-base-content"><%= e.type === "ph_reading" ? "pH Reading" : e.type.replace("_", " ") %></span>
+                <%
+                  let typeLabel = "Hendelse";
+                  if (e.type === "sg_reading") typeLabel = "SG-måling";
+                  else if (e.type === "ph_reading") typeLabel = "pH-måling";
+                  else if (e.type === "addition") typeLabel = "Tilsetning";
+                  else if (e.type === "racking") typeLabel = "Omstikking";
+                  else if (e.type === "bottling") typeLabel = "Flasking";
+                  else if (e.type === "comment") typeLabel = "Kommentar";
+                %>
+                <span class="font-bold text-sm uppercase text-base-content"><%= typeLabel %></span>
                 <% if (e.type === "sg_reading") { %>
                   <% const sgStr = e.data && e.data.sg !== undefined ? e.data.sg.toFixed(3) : ""; %>
                   <% const note = (e.data && e.data.note || "").trim(); %>
@@ -669,7 +685,7 @@
                   <div class="text-sm text-base-content mt-0.5 leading-snug"><%= e.data.note %></div>
                 <% } %>
               </div>
-              <button class="btn btn-ghost btn-xs text-primary ml-auto" data-event-id="<%= e.id %>" data-delete-url="/sessions/<%= session.id %>/events/<%= e.id %>" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Edit Event">
+              <button class="btn btn-ghost btn-xs text-primary ml-auto" data-event-id="<%= e.id %>" data-delete-url="/sessions/<%= session.id %>/events/<%= e.id %>" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Rediger hendelse">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
               </button>
             </div>
@@ -677,7 +693,7 @@
           </li>
         <% }); %>
       <% } else { %>
-        <div class="text-pollen">No events logged yet.</div>
+        <div class="text-pollen">Ingen hendelser loggført ennå.</div>
       <% } %>
     </ul>
   </div>
@@ -687,71 +703,72 @@
   <!-- Add / Edit Event Modal -->
   <dialog id="event_modal" class="modal">
     <div class="modal-box">
-      <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Log Event</h3>
+      <h3 id="event-modal-title" class="font-bold text-lg mb-4 text-base-content">Loggfør hendelse</h3>
       <form id="event-form" hx-post="/sessions/<%= session.id %>/events" hx-target="#main-content" hx-swap="innerHTML show:#event-history-title:top focus-scroll:false" onsubmit="document.getElementById('event_modal').close()">
         <input type="hidden" name="id" id="event-id" />
 
         <div class="form-control w-full mb-3" id="event-type-container">
-          <label class="label"><span class="label-text">Event Type</span></label>
+          <label class="label"><span class="label-text">Hendelsestype</span></label>
           <select name="type" id="event-type-select" class="select select-bordered w-full" required onchange="updateEventModalFields()">
-            <option value="sg_reading">SG Reading</option>
-            <option value="ph_reading">pH Reading</option>
-            <option value="addition">Addition (Nutrients, etc.)</option>
-            <option value="racking">Racking</option>
-            <option value="bottling">Bottling</option>
-            <option value="comment">Comment</option>
+            <option value="sg_reading">SG-måling</option>
+            <option value="ph_reading">pH-måling</option>
+            <option value="addition">Tilsetning (næring, frukt osv.)</option>
+            <option value="racking">Omstikking</option>
+            <option value="bottling">Flasking</option>
+            <option value="comment">Kommentar</option>
           </select>
           <p id="event-description" class="text-xs text-pollen mt-1 leading-tight"></p>
         </div>
 
         <div class="form-control w-full mb-3">
-          <label class="label"><span class="label-text">Date & Time</span></label>
+          <label class="label"><span class="label-text">Dato og klokkeslett</span></label>
           <input type="datetime-local" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
         </div>
 
         <!-- SG Container (for sg_reading) -->
         <div id="sg-data-container" class="form-control w-full mb-3">
-          <label class="label"><span class="label-text">SG Value</span></label>
-          <input type="number" step="0.001" name="sg" id="event-sg-input" class="input input-bordered w-full" placeholder="e.g. 1.090" />
+          <label class="label"><span class="label-text">SG-verdi</span></label>
+          <input type="number" step="0.001" name="sg" id="event-sg-input" class="input input-bordered w-full" placeholder="f.eks. 1.090" />
         </div>
 
         <!-- pH Container (for ph_reading) -->
         <div id="ph-data-container" class="form-control w-full mb-3 hidden">
-          <label class="label"><span class="label-text">pH Value</span></label>
-          <input type="number" step="0.01" min="0" max="14" name="ph" id="event-ph-input" class="input input-bordered w-full" placeholder="e.g. 3.60" />
+          <label class="label"><span class="label-text">pH-verdi</span></label>
+          <input type="number" step="0.01" min="0" max="14" name="ph" id="event-ph-input" class="input input-bordered w-full" placeholder="f.eks. 3.60" />
         </div>
 
         <!-- Addition Container (for addition) -->
         <div id="addition-data-container" class="hidden flex-col gap-3 mb-3">
           <div class="form-control w-full">
-            <label class="label"><span class="label-text">Inventory Item</span></label>
+            <label class="label"><span class="label-text">Vare fra stabburet</span></label>
             <select name="inventory_item_id" id="event-inventory-select" class="select select-bordered w-full" onchange="toggleCustomIngredient()">
-              <option value="">-- Custom / Not in Inventory --</option>
+              <option value="">-- Egendefinert / Ikke i stabburet --</option>
               <% inventoryList.forEach(function(i) { %>
-                <option value="<%= i.id %>" data-unit="<%= i.unit %>"><%= i.name %> (Stock: <%= i.quantity_on_hand %> <%= i.unit %>)</option>
+                <option value="<%= i.id %>" data-unit="<%= i.unit %>"><%= i.name %> (Lager: <%= i.quantity_on_hand %> <%= i.unit %>)</option>
               <% }); %>
             </select>
           </div>
           <div class="form-control w-full hidden" id="custom-ingredient-container">
-            <label class="label"><span class="label-text">Ingredient Name</span></label>
-            <input type="text" name="custom_ingredient" id="custom-ingredient-input" class="input input-bordered w-full" placeholder="e.g. Cinnamon Stick" />
+            <label class="label"><span class="label-text">Navn på råvare</span></label>
+            <input type="text" name="custom_ingredient" id="custom-ingredient-input" class="input input-bordered w-full" placeholder="f.eks. Kanelstang" />
           </div>
           <div class="flex gap-2">
             <div class="form-control w-1/2">
-              <label class="label"><span class="label-text">Quantity</span></label>
+              <label class="label"><span class="label-text">Mengde</span></label>
               <input type="number" step="any" name="quantity_used" id="quantity-used-input" class="input input-bordered w-full" />
             </div>
             <div class="form-control w-1/2">
-              <label class="label"><span class="label-text">Unit</span></label>
+              <label class="label"><span class="label-text">Enhet</span></label>
               <select name="unit" id="unit-select" class="select select-bordered w-full">
                 <option value="g">g</option>
                 <option value="kg">kg</option>
                 <option value="ml">ml</option>
                 <option value="L">L</option>
-                <option value="packets">packets</option>
+                <option value="packets">pakker</option>
                 <option value="oz">oz</option>
                 <option value="lb">lb</option>
-                <option value="tsp">tsp</option>
+                <option value="tsp">ts</option>
+                <option value="tbsp">ss</option>
               </select>
             </div>
           </div>
@@ -759,46 +776,46 @@
 
         <!-- Note Container (available for all event types) -->
         <div id="event-note-container" class="form-control w-full mb-3">
-          <label class="label"><span class="label-text" id="event-note-label">Note (Optional)</span></label>
-          <input type="text" name="note" id="event-note-input" class="input input-bordered w-full" placeholder="e.g. Additional notes or observations" />
+          <label class="label"><span class="label-text" id="event-note-label">Notat (valgfritt)</span></label>
+          <input type="text" name="note" id="event-note-input" class="input input-bordered w-full" placeholder="f.eks. Ytterligere observasjoner eller notater" />
         </div>
 
         <div class="modal-action flex justify-between items-center w-full">
           <div>
-            <button type="button" id="event-delete-btn" class="btn btn-error gap-1.5 hidden" hx-target="#main-content" hx-swap="innerHTML show:#event-history-title:top focus-scroll:false" hx-confirm="Are you sure you want to delete this event?" hx-params="none" title="Delete Event">
+            <button type="button" id="event-delete-btn" class="btn btn-error gap-1.5 hidden" hx-target="#main-content" hx-swap="innerHTML show:#event-history-title:top focus-scroll:false" hx-confirm="Er du sikker på at du vil slette denne hendelsen?" hx-params="none" title="Slett hendelse">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-              Delete
+              Slett
             </button>
           </div>
           <div class="flex gap-2">
-            <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Cancel</button>
-            <button type="submit" id="event-submit-btn" class="btn btn-primary">Log Event</button>
+            <button type="button" class="btn" onclick="document.getElementById('event_modal').close()">Avbryt</button>
+            <button type="submit" id="event-submit-btn" class="btn btn-primary">Loggfør hendelse</button>
           </div>
         </div>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button>close</button>
+      <button>lukk</button>
     </form>
   </dialog>
 
   <!-- Edit Session Name Modal -->
   <dialog id="edit_session_name_modal" class="modal">
     <div class="modal-box">
-      <h3 class="font-bold text-lg mb-4">Edit Batch Name</h3>
+      <h3 class="font-bold text-lg mb-4">Rediger navn på brygget</h3>
       <form hx-post="/sessions/<%= session.id %>/name" hx-target="#main-content" onsubmit="document.getElementById('edit_session_name_modal').close()">
         <div class="form-control w-full mb-3">
-          <label class="label"><span class="label-text">Name</span></label>
+          <label class="label"><span class="label-text">Navn</span></label>
           <input type="text" name="name" required class="input input-bordered w-full" value="<%= session.name %>" />
         </div>
         <div class="modal-action">
-          <button type="button" class="btn" onclick="document.getElementById('edit_session_name_modal').close()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn" onclick="document.getElementById('edit_session_name_modal').close()">Avbryt</button>
+          <button type="submit" class="btn btn-primary">Lagre endringer</button>
         </div>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button>close</button>
+      <button>lukk</button>
     </form>
   </dialog>
 
@@ -846,9 +863,9 @@
          qtyInput.required = true;
          toggleCustomIngredient();
 
-         desc.innerText = "Log additions like yeast pitching, nutrients, fruit, or spices.";
-         noteLabel.innerText = "Note (Optional)";
-         noteInput.placeholder = "e.g. Staggered addition, stirred well";
+         desc.innerText = "Registrer tilsetninger som gjær, næring, frukt eller krydder.";
+         noteLabel.innerText = "Notat (valgfritt)";
+         noteInput.placeholder = "f.eks. Trinnvis tilsats, rørt godt om";
       } else if (type === 'sg_reading') {
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
@@ -859,9 +876,9 @@
          sgContainer.classList.remove('hidden');
          sgInput.required = true;
 
-         desc.innerText = "Record the Specific Gravity (SG). The first reading acts as your Original Gravity (OG).";
-         noteLabel.innerText = "Note (Optional)";
-         noteInput.placeholder = "e.g. Activity slowing, clear must";
+         desc.innerText = "Registrer spesifikk tetthet (SG). Første måling fungerer som din start-SG (OG).";
+         noteLabel.innerText = "Notat (valgfritt)";
+         noteInput.placeholder = "f.eks. Avtagende aktivitet, klarnende mjød";
       } else if (type === 'ph_reading') {
          additionContainer.classList.add('hidden');
          additionContainer.classList.remove('flex');
@@ -872,9 +889,9 @@
          phContainer.classList.remove('hidden');
          phInput.required = true;
 
-         desc.innerText = "Record the pH of the must or mead (typical range 3.20 – 4.00).";
-         noteLabel.innerText = "Note (Optional)";
-         noteInput.placeholder = "e.g. Must tested before pitch, or adjusted with potassium bicarbonate";
+         desc.innerText = "Registrer pH i mjøden (normalt område 3,20 – 4,00).";
+         noteLabel.innerText = "Notat (valgfritt)";
+         noteInput.placeholder = "f.eks. Målt før gjærtilsetning, eller justert med kaliumbikarbonat";
       } else if (type === 'racking') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
@@ -885,9 +902,9 @@
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
 
-         desc.innerText = "Transfer off the sediment (lees) to a new vessel. Progresses the batch to Aging.";
-         noteLabel.innerText = "Notes (Optional)";
-         noteInput.placeholder = "e.g. Racked to glass carboy, minimal headspace";
+         desc.innerText = "Stikk om mjøden vekk fra bunnfallet over i et nytt kar. Flytter brygget til modning.";
+         noteLabel.innerText = "Notat (valgfritt)";
+         noteInput.placeholder = "f.eks. Stukket om til glassballong, minimalt med luftrom";
       } else if (type === 'bottling') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
@@ -898,9 +915,9 @@
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
 
-         desc.innerText = "Final packaging. Completes the batch and moves it to Bottled.";
-         noteLabel.innerText = "Notes (Optional)";
-         noteInput.placeholder = "e.g. Yielded 10 bottles, primed with honey";
+         desc.innerText = "Tapping på flaske. Fullfører brygget og setter status til Flasket.";
+         noteLabel.innerText = "Notat (valgfritt)";
+         noteInput.placeholder = "f.eks. Ga 10 flasker, primet med honning";
       } else if (type === 'comment') {
          sgContainer.classList.add('hidden');
          sgInput.required = false;
@@ -911,18 +928,18 @@
          additionContainer.classList.remove('flex');
          qtyInput.required = false;
 
-         desc.innerText = "Add a note, observation, or tasting comment for this batch.";
-         noteLabel.innerText = "Note";
+         desc.innerText = "Legg til et notat, observasjon eller smakskommentar for dette brygget.";
+         noteLabel.innerText = "Notat";
          noteInput.required = true;
-         noteInput.placeholder = "e.g. Degassed carboy, tasting notes, clarity observations...";
+         noteInput.placeholder = "f.eks. Avgasset ballongen, smaksnotater, observasjoner om klarhet...";
       }
     }
 
     function openAddEventModal() {
       const modal = document.getElementById('event_modal');
       const form = document.getElementById('event-form');
-      document.getElementById('event-modal-title').innerText = "Log Event";
-      document.getElementById('event-submit-btn').innerText = "Log Event";
+      document.getElementById('event-modal-title').innerText = "Loggfør hendelse";
+      document.getElementById('event-submit-btn').innerText = "Loggfør hendelse";
 
       const deleteBtn = document.getElementById('event-delete-btn');
       if (deleteBtn) {
@@ -955,8 +972,8 @@
     function openEditEventModal(event) {
       const modal = document.getElementById('event_modal');
       const form = document.getElementById('event-form');
-      document.getElementById('event-modal-title').innerText = "Edit Event";
-      document.getElementById('event-submit-btn').innerText = "Save Changes";
+      document.getElementById('event-modal-title').innerText = "Rediger hendelse";
+      document.getElementById('event-submit-btn').innerText = "Lagre endringer";
 
       const deleteBtn = document.getElementById('event-delete-btn');
       if (deleteBtn) {
@@ -1022,10 +1039,10 @@
       if (!found) {
         invSelect.value = "";
         toggleCustomIngredient();
-        document.getElementById('custom-ingredient-input').value = 'Malic Acid (Eplesyre)';
+        document.getElementById('custom-ingredient-input').value = 'Eplesyre (Malic Acid)';
       }
       document.getElementById('unit-select').value = 'g';
-      document.getElementById('event-note-input').value = 'pH adjustment: Add ~1 g/L malic acid to lower pH to <= 3.8';
+      document.getElementById('event-note-input').value = 'pH-justering: Tilsett ~1 g/L eplesyre for å senke pH til <= 3,8';
     }
 
     function openBufferModal() {
@@ -1045,10 +1062,10 @@
       if (!found) {
         invSelect.value = "";
         toggleCustomIngredient();
-        document.getElementById('custom-ingredient-input').value = 'Chalk (Calcium Carbonate / Kritt)';
+        document.getElementById('custom-ingredient-input').value = 'Kritt (Kalsiumkarbonat / Natron)';
       }
       document.getElementById('unit-select').value = 'g';
-      document.getElementById('event-note-input').value = 'pH buffer: Neutralize excess acid to raise pH to 3.2 or above';
+      document.getElementById('event-note-input').value = 'pH-buffer: Nøytralisere overskuddssyre for å heve pH til 3,2 eller over';
     }
 
     function openStabilizerModal() {
@@ -1078,7 +1095,7 @@
           break;
         }
       }
-      document.getElementById('event-note-input').value = 'Ettersøting (Backsweetening)';
+      document.getElementById('event-note-input').value = 'Ettersøting';
     }
 
     function openKieselsolModal() {
@@ -1098,10 +1115,10 @@
       if (!found) {
         invSelect.value = "";
         toggleCustomIngredient();
-        document.getElementById('custom-ingredient-input').value = 'Kieselsol (Super-Kleer Part 1 [-])';
+        document.getElementById('custom-ingredient-input').value = 'Kieselsol (Super-Kleer trinn 1 [-])';
       }
       document.getElementById('unit-select').value = 'ml';
-      document.getElementById('event-note-input').value = 'Fining Step 1: Kieselsol [-] added; wait 12–24h before adding Chitosan [+]';
+      document.getElementById('event-note-input').value = 'Klarning trinn 1: Kieselsol [-] tilsatt; vent 12–24t før Chitosan [+] tilsettes';
     }
 
     function openChitosanModal() {
@@ -1121,10 +1138,10 @@
       if (!found) {
         invSelect.value = "";
         toggleCustomIngredient();
-        document.getElementById('custom-ingredient-input').value = 'Chitosan (Super-Kleer Part 2 [+])';
+        document.getElementById('custom-ingredient-input').value = 'Chitosan (Super-Kleer trinn 2 [+])';
       }
       document.getElementById('unit-select').value = 'ml';
-      document.getElementById('event-note-input').value = 'Fining Step 2: Chitosan [+] added; starts 7–14 day sediment compaction countdown';
+      document.getElementById('event-note-input').value = 'Klarning trinn 2: Chitosan [+] tilsatt; starter 7–14 dagers nedtelling for kompakt bunnfall';
     }
 
     // Restore collapsible card open/closed states from localStorage and attach listeners

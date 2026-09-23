@@ -90,7 +90,7 @@ export function buildFermentationChartData(
 			borderDash: [6, 4],
 			label: {
 				display: true,
-				content: `1/3 Sugar Break (${normBreak.toFixed(3)})`,
+				content: `1/3-sukkerbrudd (${normBreak.toFixed(3)})`,
 				position: "end",
 				backgroundColor: "#D97706",
 				color: "white",

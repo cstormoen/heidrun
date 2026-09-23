@@ -34,7 +34,7 @@ describe("HTTP server smoke integration", () => {
 		const html = await res.text();
 		expect(html).toContain("<!DOCTYPE html>");
 		expect(html).toContain("Heidrun");
-		expect(html).toContain("Your Batches");
+		expect(html).toContain("Dine brygg");
 	});
 
 	it("serves the home dashboard (HTMX partial)", async () => {
@@ -44,22 +44,22 @@ describe("HTTP server smoke integration", () => {
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).not.toContain("<!DOCTYPE html>");
-		expect(html).toContain("Your Batches");
+		expect(html).toContain("Dine brygg");
 	});
 
 	it("serves pantry view", async () => {
 		const res = await fetch("http://localhost:3000/pantry");
 		expect(res.status).toBe(200);
 		const html = await res.text();
-		expect(html).toContain("Pantry Inventory");
+		expect(html).toContain("Stabbur");
 	});
 
 	it("serves new batch form", async () => {
 		const res = await fetch("http://localhost:3000/sessions/new");
 		expect(res.status).toBe(200);
 		const html = await res.text();
-		expect(html).toContain("Start New Batch");
-		expect(html).toContain("Recipe / Foundation");
+		expect(html).toContain("Start nytt brygg");
+		expect(html).toContain("Oppskrift / Grunnoppskrift");
 	});
 
 	it("serves static assets", async () => {
@@ -89,10 +89,10 @@ describe("HTTP server smoke integration", () => {
 		const html = await postRes.text();
 
 		expect(html).toContain('id="event-history-title"');
-		expect(html).toContain("pH Reading");
+		expect(html).toContain("pH-måling");
 		expect(html).toContain("pH 3.62");
 		expect(html).toContain("Test Must pH Integration");
-		expect(html).toContain("Current pH");
+		expect(html).toContain("Nåværende pH");
 
 		// Clean up by extracting event ID and deleting it
 		const match = html.match(/\/sessions\/1\/events\/(\d+)/);

@@ -62,9 +62,9 @@ describe("chartData", () => {
 			expect(result.abvData[1].y).toBeCloseTo(Number(calculateABV(1.11, 1.05).toFixed(2)), 2);
 
 			expect(result.annotations.length).toBe(2);
-			expect(result.annotations[0].label.content).toBe("Addition");
+			expect(result.annotations[0].label.content).toBe("Tilsetning");
 			expect(result.annotations[0].xMin).toBe(2);
-			expect(result.annotations[1].label.content).toBe("Bottled");
+			expect(result.annotations[1].label.content).toBe("Flasket");
 			expect(result.annotations[1].xMin).toBe(9);
 		});
 
@@ -88,7 +88,7 @@ describe("chartData", () => {
 			expect(breakAnnotation?.value).toBe(1.073);
 			expect(breakAnnotation?.yMin).toBe(1.073);
 			expect(breakAnnotation?.yMax).toBe(1.073);
-			expect(breakAnnotation?.label.content).toBe("1/3 Sugar Break (1.073)");
+			expect(breakAnnotation?.label.content).toBe("1/3-sukkerbrudd (1.073)");
 			expect(breakAnnotation?.borderDash).toEqual([6, 4]);
 		});
 
@@ -148,7 +148,7 @@ describe("chartData", () => {
 			const result = buildFermentationChartData(events, startDate);
 			// Only bottling should be present, comment must be excluded
 			expect(result.annotations.length).toBe(1);
-			expect(result.annotations[0].label.content).toBe("Bottled");
+			expect(result.annotations[0].label.content).toBe("Flasket");
 		});
 	});
 });

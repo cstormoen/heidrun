@@ -1,6 +1,10 @@
 <% 
   const badgeClasses = getBadgeClasses(session.status);
-  const statusLabel = session.status === "Aging" ? "Aging (Modning)" : (session.status || "Planned");
+  let statusLabel = session.status || "Planlagt";
+  if (statusLabel === "Planned") statusLabel = "Planlagt";
+  if (statusLabel === "Primary Fermentation") statusLabel = "Primærgjæring";
+  if (statusLabel === "Aging" || statusLabel === "Aging (Modning)") statusLabel = "Modning";
+  if (statusLabel === "Bottled") statusLabel = "Flasket";
   const startDateStr = formatDateForDisplay(session.start_date);
   const sgDisplay = formatSg(session.current_sg);
 %>
@@ -10,37 +14,37 @@
     <div class="flex gap-2 mb-2 items-center flex-wrap">
       <span class="badge <%= badgeClasses %>"><%= statusLabel %></span>
       <% if (session.is_chemically_stabilized) { %>
-        <span class="badge bg-apothecary-teal text-white border-apothecary-teal badge-sm">Chemically Stabilized</span>
+        <span class="badge bg-apothecary-teal text-white border-apothecary-teal badge-sm">Kjemisk stabilisert</span>
       <% } %>
       <% if (session.fining_state && session.fining_state.stage === 'kieselsol_added') { %>
-        <span class="badge badge-warning text-black border-warning badge-sm">Fining: Step 1</span>
+        <span class="badge badge-warning text-black border-warning badge-sm">Fining/Klarning: Trinn 1</span>
       <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_ready') { %>
-        <span class="badge badge-success text-white border-success badge-sm">Add Chitosan Now</span>
+        <span class="badge badge-success text-white border-success badge-sm">Tilsett Chitosan nå</span>
       <% } else if (session.fining_state && session.fining_state.stage === 'chitosan_overdue') { %>
-        <span class="badge badge-warning text-black border-warning badge-sm">Chitosan Overdue</span>
+        <span class="badge badge-warning text-black border-warning badge-sm">Chitosan forsinket</span>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacting') { %>
-        <span class="badge badge-info text-white border-info badge-sm">Compacting (Day <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
+        <span class="badge badge-info text-white border-info badge-sm">Bunnfall komprimeres (Dag <%= (session.fining_state.days_compacting || 0) + 1 %>/14)</span>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>
-        <span class="badge badge-success text-white border-success badge-sm">Sediment Compacted</span>
+        <span class="badge badge-success text-white border-success badge-sm">Kompakt bunnfall</span>
       <% } %>
       <% if (startDateStr) { %>
-        <div class="text-sm text-pollen grid group" title="Click or hover to toggle">
-          <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Age: <%= session.age_formatted %></span>
+        <div class="text-sm text-pollen grid group" title="Klikk eller hold over for å bytte visning">
+          <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-100 group-hover:opacity-0 group-active:opacity-0">Alder: <%= session.age_formatted %></span>
           <span class="col-start-1 row-start-1 transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-active:opacity-100"><%= startDateStr %></span>
         </div>
       <% } else { %>
         <div class="text-sm text-pollen">
-          <span>Age: <%= session.age_formatted %></span>
+          <span>Alder: <%= session.age_formatted %></span>
         </div>
       <% } %>
     </div>
     <div class="grid grid-cols-2 gap-4 mt-2">
       <div>
-        <div class="text-xs text-pollen">Current SG</div>
+        <div class="text-xs text-pollen">Nåværende SG</div>
         <div class="font-semibold text-secondary"><%= sgDisplay %></div>
       </div>
       <div>
-        <div class="text-xs text-pollen">Calculated ABV</div>
+        <div class="text-xs text-pollen">Beregnet ABV</div>
         <div class="font-semibold text-secondary"><%= session.abv %>%</div>
       </div>
     </div>

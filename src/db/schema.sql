@@ -26,17 +26,17 @@ CREATE TABLE IF NOT EXISTS events (
 
 -- Insert some starter recipes
 INSERT INTO recipes (name, description, target_sg, type) 
-SELECT 'Traditional Mead', '<strong>Traditional Mead</strong> (Target OG: 1.110 | ~14% ABV) Pure honey wine with delicate floral aromatics. Requires <strong>~1.8 kg honey per 5 L</strong>, Lalvin D-47 yeast, and a staggered nutrient schedule (SNA).', 1.110, 'starter'
-WHERE NOT EXISTS (SELECT 1 FROM recipes WHERE name = 'Traditional Mead');
+SELECT 'Tradisjonell mjød', '<strong>Tradisjonell mjød</strong> (Mål-OG: 1.110 | ~14 % ABV) Ren honningvin med milde florale aromaer. Krever <strong>~1,8 kg honning per 5 L</strong>, Lalvin D-47 gjær og trinnvis gjærnæringstilsats (SNA).', 1.110, 'starter'
+WHERE NOT EXISTS (SELECT 1 FROM recipes WHERE name IN ('Traditional Mead', 'Tradisjonell mjød'));
 
 INSERT INTO recipes (name, description, target_sg, type) 
-SELECT 'Melomel (Fruit Mead)', '<strong>Melomel / Fruit Mead</strong> (Target OG: 1.120 | ~15% ABV) Vibrant mead fermented with berries. Residual sweetness balances fruit acidity. Requires <strong>~2.0 kg honey + 1–1.5 kg fruit per 5 L</strong> with Lalvin 71B yeast.', 1.120, 'starter'
-WHERE NOT EXISTS (SELECT 1 FROM recipes WHERE name = 'Melomel (Fruit Mead)');
+SELECT 'Melomel (Fruktmjød)', '<strong>Melomel (Fruktmjød)</strong> (Mål-OG: 1.120 | ~15 % ABV) Frisk mjød gjæret med bær. Restsødme balanserer fruktsyren. Krever <strong>~2,0 kg honning + 1–1,5 kg bær/frukt per 5 L</strong> med Lalvin 71B gjær.', 1.120, 'starter'
+WHERE NOT EXISTS (SELECT 1 FROM recipes WHERE name IN ('Melomel (Fruit Mead)', 'Melomel (Fruktmjød)'));
 
 CREATE TABLE IF NOT EXISTS inventory (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('Honey & Sugars', 'Yeast & Cultures', 'Nutrients & Additives', 'Fruits & Adjuncts')),
+  category TEXT NOT NULL CHECK (category IN ('Honning og sukker', 'Gjær og kulturer', 'Gjærnæring og tilsetninger', 'Frukt, bær og krydder')),
   quantity_on_hand REAL NOT NULL DEFAULT 0,
   unit TEXT NOT NULL,
   cost_per_unit REAL,

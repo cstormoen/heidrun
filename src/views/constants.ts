@@ -1,12 +1,18 @@
-export function getBadgeClasses(status?: string): string {
+import { Status } from "../domain/models";
+
+export function getBadgeClasses(status?: Status | string): string {
 	switch (status) {
+		case Status.Planned:
 		case "Planned":
 			return "bg-status-planned text-white border-status-planned";
+		case Status.PrimaryFermentation:
 		case "Primary Fermentation":
 			return "bg-status-primary text-black border-status-primary";
+		case Status.Aging:
 		case "Aging":
 		case "Aging (Modning)":
 			return "bg-status-aging text-white border-status-aging";
+		case Status.Bottled:
 		case "Bottled":
 			return "bg-status-bottled text-white border-status-bottled";
 		default:
@@ -37,17 +43,17 @@ export const EVENT_ANNOTATION_CONFIG: Record<
 	string,
 	{ label: string; color: string }
 > = {
-	ph_reading: { label: "pH Reading", color: "#3E7B7D" }, // Apothecary Teal
-	addition: { label: "Addition", color: "#F4C430" }, // Ferment Gold
-	racking: { label: "Racking", color: "#7A4A3A" }, // Oak Barrel
-	bottling: { label: "Bottled", color: "#4E795B" }, // Botanical Sage
+	ph_reading: { label: "pH-måling", color: "#3E7B7D" }, // Apothecary Teal
+	addition: { label: "Tilsetning", color: "#F4C430" }, // Ferment Gold
+	racking: { label: "Omstikking", color: "#7A4A3A" }, // Oak Barrel
+	bottling: { label: "Flasket", color: "#4E795B" }, // Botanical Sage
 };
 
 export const DEFAULT_ANNOTATION_COLOR = "#8A8377"; // Planned / Neutral
 
 export const PANTRY_CATEGORIES = [
-	"Honey & Sugars",
-	"Yeast & Cultures",
-	"Nutrients & Additives",
-	"Fruits & Adjuncts",
+	"Honning og sukker",
+	"Gjær og kulturer",
+	"Gjærnæring og tilsetninger",
+	"Frukt, bær og krydder",
 ] as const;
