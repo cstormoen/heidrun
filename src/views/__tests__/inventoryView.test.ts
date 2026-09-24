@@ -174,6 +174,17 @@ describe("inventoryView", () => {
 			expect(html).toContain("Lalvin D47");
 			expect(html).toContain("Legg til vare");
 			expect(html).toContain("add_inventory_modal");
+			expect(html).toContain("edit_inventory_modal");
+
+			// Action buttons should always be visible (no group-hover hiding opacity)
+			expect(html).not.toContain("opacity-0 group-hover:opacity-100");
+
+			// Cards have pen icon for editing
+			expect(html).toContain("title=\"Rediger vare\"");
+
+			// Cards do not have delete buttons; delete button is in the edit modal
+			expect(html).toContain('id="delete-inventory-btn"');
+			expect(html).toContain("deleteCurrentInventoryItem()");
 		});
 	});
 });

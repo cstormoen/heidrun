@@ -277,4 +277,50 @@ describe("HTTP server smoke integration", () => {
 		});
 		expect(delRes.status).toBe(200);
 	});
+
+	it("supports creating and deleting a session", async () => {
+		const sessionName = `Slettbart Brygg ${Date.now()}`;
+		// 1. Create a session
+		const form = new FormData();
+		form.append("name", sessionName);
+		form.append("recipe_id", "1");
+
+		const createRes = await fetch(`${BASE_URL}/sessions`, {
+			method: "POST",
+			body: form,
+			headers: { "HX-Request": "true" },
+		});
+		expect(createRes.status).toBe(200);
+		const listWithCreated = await createRes.text();
+		expect(listWithCreated).toContain(sessionName);
+
+		// Extract session id from list card hx-get
+		const match = listWithCreated.match(
+			new RegExp(`hx-get="\\/sessions\\/(\\d+)"[^>]*>[\\s\\S]*?${sessionName}`),
+		);
+		expect(match).not.toBeNull();
+		const createdSessionId = match![1];
+
+		// 2. Fetch detail view for the session
+		const detailRes = await fetch(`${BASE_URL}/sessions/${createdSessionId}`, {
+			headers: { "HX-Request": "true" },
+		});
+		expect(detailRes.status).toBe(200);
+		const detailHtml = await detailRes.text();
+
+		// Verify delete button is present in the rendered modal
+		expect(detailHtml).toContain(`hx-delete="/sessions/${createdSessionId}"`);
+		expect(detailHtml).toContain("Slett");
+
+		// 3. Delete the session
+		const deleteRes = await fetch(`${BASE_URL}/sessions/${createdSessionId}`, {
+			method: "DELETE",
+			headers: { "HX-Request": "true" },
+		});
+		expect(deleteRes.status).toBe(200);
+		expect(deleteRes.headers.get("HX-Push-Url")).toBe("/");
+		const listHtml = await deleteRes.text();
+		expect(listHtml).not.toContain(sessionName);
+	});
 });
+

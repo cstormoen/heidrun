@@ -333,6 +333,24 @@ serve({
 			return htmlResponse(content, true);
 		}
 
+		// Sessions: Delete batch
+		if (req.method === "DELETE" && url.pathname.match(/^\/sessions\/\d+$/)) {
+			const sessionId = parseInt(url.pathname.split("/")[2]);
+
+			if (!isNaN(sessionId)) {
+				DAL.deleteSession(sessionId);
+			}
+
+			const rawSessions = DAL.getSessions();
+			const inventoryList = DAL.getInventoryItems();
+			const sessions = rawSessions.map((s) => {
+				const events = DAL.getEventsForSession(s.id);
+				return deriveSessionState(s, events, inventoryList);
+			});
+			const content = renderSessionList(sessions);
+			return htmlResponse(content, isHtmx, { pushUrl: "/" });
+		}
+
 		// Sessions: Add event
 		if (
 			req.method === "POST" &&

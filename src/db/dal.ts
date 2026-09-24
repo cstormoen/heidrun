@@ -185,6 +185,21 @@ export const DAL = {
     });
   },
 
+  deleteSession: (id: number): boolean => {
+    const session = DAL.getSessionById(id);
+    if (!session) return false;
+
+    const events = DAL.getEventsForSession(id);
+    for (const ev of events) {
+      DAL.deleteEvent(ev.id);
+    }
+
+    db.run("DELETE FROM sessions WHERE id = $id", {
+      $id: id,
+    });
+    return true;
+  },
+
   getEventsForSession: (sessionId: number): Event[] => {
     const rawEvents = db.query("SELECT * FROM events WHERE session_id = $sessionId ORDER BY timestamp ASC").all({ $sessionId: sessionId }) as any[];
     return rawEvents.map(e => ({

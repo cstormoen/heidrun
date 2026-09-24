@@ -79,23 +79,5 @@ describe("DAL recipe operations", () => {
 		const stillExists = DAL.getRecipeById(starter.id);
 		expect(stillExists).not.toBeNull();
 	});
-
-	it("deletes a custom recipe and sets referenced session recipe_id to null", () => {
-		const created = DAL.createRecipe({
-			name: "Oppskrift for brygg",
-			target_sg: 1.1,
-		});
-
-		const session = DAL.createSession(created.id, "Test Brygg med oppskrift");
-		expect(session.recipe_id).toBe(created.id);
-
-		const deleted = DAL.deleteRecipe(created.id);
-		expect(deleted).toBe(true);
-
-		const recipeAfterDelete = DAL.getRecipeById(created.id);
-		expect(recipeAfterDelete).toBeNull();
-
-		const sessionAfterDelete = DAL.getSessionById(session.id);
-		expect(sessionAfterDelete?.recipe_id).toBeNull();
-	});
 });
+

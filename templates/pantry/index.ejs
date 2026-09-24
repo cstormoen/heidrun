@@ -13,7 +13,7 @@
           <h3 class="text-lg font-bold text-base-content border-b border-base-300 pb-2 mb-3"><%= cat.category %></h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <% cat.items.forEach(function(vm) { %>
-              <div class="card bg-base-100 shadow-sm border border-base-300 group">
+              <div class="card bg-base-100 shadow-sm border border-base-300">
                 <div class="card-body p-4">
                   <div class="flex justify-between items-start">
                     <div>
@@ -27,12 +27,13 @@
                       <div class="text-xs text-pollen uppercase"><%= vm.item.unit %></div>
                     </div>
                   </div>
-                  <div class="mt-2 pt-2 border-t border-base-200 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div class="mt-2 pt-2 border-t border-base-200 flex justify-end items-center gap-2">
                     <% if (vm.domainLink) { %>
-                      <a href="<%= vm.domainLink.url %>" target="_blank" class="btn btn-xs btn-outline text-primary mr-auto">Gå til <%= vm.domainLink.domain %></a>
+                      <a href="<%= vm.domainLink.url %>" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline text-primary mr-auto">Gå til <%= vm.domainLink.domain %></a>
                     <% } %>
-                    <button class="btn btn-xs btn-ghost text-pollen hover:text-primary" onclick='openEditModal(<%- vm.itemJson %>)'>Rediger</button>
-                    <button class="btn btn-xs btn-ghost text-error" hx-delete="/stabbur/<%= vm.item.id %>" hx-target="#main-content" hx-confirm="Er du sikker på at du vil slette denne varen?">Slett</button>
+                    <button class="btn btn-xs btn-ghost text-pollen hover:text-primary" onclick='openEditModal(<%- vm.itemJson %>)' title="Rediger vare" aria-label="Rediger vare">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -157,9 +158,12 @@
           <label class="label"><span class="label-text">Lenke (valgfri nettadresse)</span></label>
           <input type="url" name="url" id="edit-url" class="input input-bordered w-full" />
         </div>
-        <div class="modal-action">
-          <button type="button" class="btn" onclick="document.getElementById('edit_inventory_modal').close()">Avbryt</button>
-          <button type="submit" class="btn btn-primary">Lagre endringer</button>
+        <div class="modal-action flex justify-between items-center">
+          <button type="button" id="delete-inventory-btn" class="btn btn-ghost text-error" onclick="deleteCurrentInventoryItem()">Slett</button>
+          <div class="flex gap-2">
+            <button type="button" class="btn" onclick="document.getElementById('edit_inventory_modal').close()">Avbryt</button>
+            <button type="submit" class="btn btn-primary">Lagre endringer</button>
+          </div>
         </div>
       </form>
     </div>
@@ -180,6 +184,16 @@
       document.getElementById('edit-url').value = item.url || '';
       
       document.getElementById('edit_inventory_modal').showModal();
+    }
+
+    function deleteCurrentInventoryItem() {
+      const id = document.getElementById('edit-id').value;
+      if (!id) return;
+      if (confirm('Er du sikker på at du vil slette denne varen?')) {
+        document.getElementById('edit_inventory_modal').close();
+        const endpoint = window.location.pathname.startsWith('/pantry') ? '/pantry/' : '/stabbur/';
+        htmx.ajax('DELETE', endpoint + id, { target: '#main-content', pushUrl: true });
+      }
     }
   </script>
 </div>

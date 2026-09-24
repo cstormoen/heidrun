@@ -659,4 +659,13 @@ describe("sessionView module", () => {
 		expect(html).toContain("~9.0 L");
 		expect(html).toContain("Beregnet bryggvolum: <strong class=\"text-secondary\">~9.0 L</strong>");
 	});
+
+	it("renders delete button in the edit session name modal", () => {
+		const html = renderSessionDetail(mockSession, mockEvents, mockInventory);
+		expect(html).toContain('id="edit_session_name_modal"');
+		expect(html).toContain('id="delete-session-btn"');
+		expect(html).toContain(`hx-delete="/sessions/${mockSession.id}"`);
+		expect(html).toContain("Slett");
+	});
 });
+

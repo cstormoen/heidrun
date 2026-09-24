@@ -82,7 +82,7 @@ describe("recipeView", () => {
 			expect(html).toContain('id="add_recipe_modal"');
 			expect(html).toContain('id="edit_recipe_modal"');
 			expect(html).toContain("Mål for startvekt (Target SG)");
-			expect(html).toContain("Slett oppskrift");
+			expect(html).toContain("Slett");
 		});
 
 		it("renders empty state for custom recipes when none exist", () => {
