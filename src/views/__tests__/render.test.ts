@@ -29,4 +29,12 @@ describe("render module", () => {
 		expect(html).not.toContain("<!DOCTYPE html>");
 		expect(html).toContain("Dine brygg");
 	});
+
+	it("returns blue drop icon for addition events", () => {
+		const { getEventIcon } = require("../constants");
+		const icon = getEventIcon("addition");
+		expect(icon).toContain("color-addition-blue");
+		expect(icon).toContain("M12 22a7 7 0 0 0 7-7");
+	});
 });
+
