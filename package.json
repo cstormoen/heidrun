@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/server.ts & bun x @tailwindcss/cli -i public/styles.css -o public/output.css --watch",
-    "build": "bun x @tailwindcss/cli -i public/styles.css -o public/output.css"
+    "build": "bun x @tailwindcss/cli -i public/styles.css -o public/output.css",
+    "test": "DB_PATH=test-mjod.sqlite bun test"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

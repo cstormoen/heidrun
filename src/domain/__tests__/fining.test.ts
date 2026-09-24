@@ -170,6 +170,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay3.sediment_phase).toBe("loose");
 		expect(stateDay3.days_compacting).toBe(3);
 		expect(stateDay3.days_remaining_to_compact).toBe(11);
+		expect(stateDay3.hours_remaining_to_compact).toBe(263);
 		expect(stateDay3.compaction_progress_pct).toBe(Math.round((3 / 14) * 100));
 		expect(stateDay3.safe_to_siphon).toBe(false);
 		expect(stateDay3.status_label).toContain("Dag 4 av 14");
@@ -202,6 +203,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay9.sediment_phase).toBe("compacting");
 		expect(stateDay9.days_compacting).toBe(9);
 		expect(stateDay9.days_remaining_to_compact).toBe(5);
+		expect(stateDay9.hours_remaining_to_compact).toBe(120);
 		expect(stateDay9.safe_to_siphon).toBe(false);
 		expect(stateDay9.status_label).toContain("Dag 10 av 14");
 	});
@@ -233,6 +235,7 @@ describe("Fining Schedule & Sediment Compaction Countdown (getFiningState)", () 
 		expect(stateDay14.sediment_phase).toBe("compacted");
 		expect(stateDay14.days_compacting).toBe(14);
 		expect(stateDay14.days_remaining_to_compact).toBe(0);
+		expect(stateDay14.hours_remaining_to_compact).toBe(0);
 		expect(stateDay14.compaction_progress_pct).toBe(100);
 		expect(stateDay14.safe_to_siphon).toBe(true);
 		expect(stateDay14.status_label).toContain("trygt å heverte");

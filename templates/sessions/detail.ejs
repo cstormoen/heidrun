@@ -542,8 +542,12 @@
               <div class="text-lg font-bold text-secondary">Dag <%= (session.fining_state.days_compacting || 0) + 1 %></div>
             </div>
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
-              <div class="text-xs text-pollen">Dager igjen</div>
-              <div class="text-lg font-bold text-secondary"><%= session.fining_state.days_remaining_to_compact %> dager</div>
+              <div class="text-xs text-pollen"><%= (session.fining_state.hours_remaining_to_compact !== undefined && session.fining_state.hours_remaining_to_compact <= 48 && session.fining_state.hours_remaining_to_compact > 0) ? 'Tid igjen' : 'Dager igjen' %></div>
+              <% if (session.fining_state.hours_remaining_to_compact !== undefined && session.fining_state.hours_remaining_to_compact <= 48 && session.fining_state.hours_remaining_to_compact > 0) { %>
+                <div class="text-lg font-bold text-secondary"><%= session.fining_state.hours_remaining_to_compact %> <%= session.fining_state.hours_remaining_to_compact === 1 ? 'time' : 'timer' %></div>
+              <% } else { %>
+                <div class="text-lg font-bold text-secondary"><%= session.fining_state.days_remaining_to_compact %> <%= session.fining_state.days_remaining_to_compact === 1 ? 'dag' : 'dager' %></div>
+              <% } %>
             </div>
             <div class="bg-base-100 rounded-lg p-2 border border-base-300">
               <div class="text-xs text-pollen">Fremdrift</div>
@@ -573,7 +577,7 @@
               Bunnfallet er porøst og løst. Den minste bevegelse eller heverting vil dra uklarhet inn i flaskene. La karet stå helt i ro.
             <% } else if (session.fining_state.sediment_phase === 'compacting') { %>
               <span class="font-semibold">Dag 7–13 (Komprimeres):</span>
-              Bunnfallet presses sammen til et tettere lag. For krystallklar mjød, vent til dag 14 slik at bunnfallet når full fasthet.
+              Bunnfallet presses sammen til et tettere lag. For krystallklar mjød, vent til dag 14 er fullført slik at bunnfallet når full fasthet.
             <% } else { %>
               <span class="text-success font-semibold">✓ Dag 14+ (Kompakt bunnfall):</span>
               Bunnfallet er komprimert til et fast lag i bunnen. Det er nå trygt å heverte over på flasker uten å dra med uklarhet.

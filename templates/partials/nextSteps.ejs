@@ -155,7 +155,17 @@
           </div>
           <div class="flex items-start gap-2">
             <span class="text-info font-bold">3.</span>
-            <span><strong>Vent <%= (session.fining_state.days_remaining_to_compact !== undefined && session.fining_state.days_remaining_to_compact > 0) ? (session.fining_state.days_remaining_to_compact + ' dager til (til dag 14)') : 'til dag 14' %>:</strong> Heverting anbefales når bunnfallet er fast komprimert for å unngå å dra med gjær i flaskene.</span>
+            <%
+              let waitTimeText = 'til dag 14 er fullført';
+              if (session.fining_state.hours_remaining_to_compact !== undefined && session.fining_state.hours_remaining_to_compact <= 48 && session.fining_state.hours_remaining_to_compact > 0) {
+                const hrs = session.fining_state.hours_remaining_to_compact;
+                waitTimeText = (hrs === 1 ? '1 time til' : hrs + ' timer til') + ' (til dag 14 er fullført)';
+              } else if (session.fining_state.days_remaining_to_compact !== undefined && session.fining_state.days_remaining_to_compact > 0) {
+                const dys = session.fining_state.days_remaining_to_compact;
+                waitTimeText = (dys === 1 ? '1 dag til' : dys + ' dager til') + ' (til dag 14 er fullført)';
+              }
+            %>
+            <span><strong>Vent <%= waitTimeText %>:</strong> Heverting anbefales når bunnfallet er fast komprimert for å unngå å dra med gjær i flaskene.</span>
           </div>
         </div>
       <% } else if (session.fining_state && session.fining_state.stage === 'sediment_compacted') { %>

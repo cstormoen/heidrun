@@ -136,6 +136,7 @@ export interface FiningState {
   hours_remaining_in_chitosan_window?: number;
   days_compacting?: number;
   days_remaining_to_compact?: number;
+  hours_remaining_to_compact?: number;
   compaction_progress_pct?: number;
   sediment_phase: SedimentPhase;
   safe_to_siphon: boolean;
@@ -615,6 +616,9 @@ export function getFiningState(
     const daysCompacting = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
     const daysRemaining = Math.max(0, 14 - daysCompacting);
     const progressPct = Math.min(100, Math.round((daysCompacting / 14) * 100));
+    const totalCompactingDurationMs = 14 * 24 * 60 * 60 * 1000;
+    const remainingMs = Math.max(0, totalCompactingDurationMs - elapsedMs);
+    const hoursRemaining = Math.ceil(remainingMs / (1000 * 60 * 60));
 
     let sedimentPhase: SedimentPhase;
     let stage: FiningStage;
@@ -646,6 +650,7 @@ export function getFiningState(
       chitosan_time: latestChitosan.timestamp,
       days_compacting: daysCompacting,
       days_remaining_to_compact: daysRemaining,
+      hours_remaining_to_compact: hoursRemaining,
       compaction_progress_pct: progressPct,
       sediment_phase: sedimentPhase,
       safe_to_siphon: safeToSiphon,

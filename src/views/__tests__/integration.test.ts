@@ -6,12 +6,13 @@ const BASE_URL = `http://localhost:${TEST_PORT}`;
 
 describe("HTTP server smoke integration", () => {
 	let proc: Subprocess;
+	let testSessionId: number = 1;
 
 	beforeAll(async () => {
 		proc = Bun.spawn(["bun", "run", "src/server.ts"], {
 			stdout: "pipe",
 			stderr: "pipe",
-			env: { ...process.env, PORT: TEST_PORT },
+			env: { ...process.env, PORT: TEST_PORT, DB_PATH: process.env.DB_PATH || "test-mjod.sqlite" },
 		});
 
 		// Wait until server is listening on TEST_PORT
@@ -21,6 +22,36 @@ describe("HTTP server smoke integration", () => {
 				if (res.ok) break;
 			} catch {
 				await Bun.sleep(100);
+			}
+		}
+
+		// Create a test session for pH and comment tests
+		// First check if session 1 exists
+		const session1Res = await fetch(`${BASE_URL}/sessions/1`);
+		if (session1Res.ok) {
+			testSessionId = 1;
+		} else {
+			// Create a new session
+			const createSessionForm = new FormData();
+			createSessionForm.append("name", "Test Integrasjon Brygg");
+			
+			const sessionPostRes = await fetch(`${BASE_URL}/sessions`, {
+				method: "POST",
+				body: createSessionForm,
+				headers: { "HX-Request": "true" },
+			});
+			if (sessionPostRes.ok) {
+				// Get the session list and find our session
+				const sessionsRes = await fetch(`${BASE_URL}/sessions`);
+				const sessionsHtml = await sessionsRes.text();
+				const match = sessionsHtml.match(/href="\/sessions\/(d+)">Test Integrasjon Brygg/);
+				if (match) {
+					testSessionId = parseInt(match[1]);
+				} else {
+					testSessionId = 1; // fallback
+				}
+			} else {
+				testSessionId = 1; // fallback
 			}
 		}
 	});
@@ -156,7 +187,7 @@ describe("HTTP server smoke integration", () => {
 		formData.append("ph", "3.62");
 		formData.append("note", "Test Must pH Integration");
 
-		const postRes = await fetch(`${BASE_URL}/sessions/1/events`, {
+		const postRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events`, {
 			method: "POST",
 			body: formData,
 			headers: { "HX-Request": "true" },
@@ -174,10 +205,10 @@ describe("HTTP server smoke integration", () => {
 		expect(html).toContain("Nåværende pH");
 
 		// Clean up by extracting event ID and deleting it
-		const match = html.match(/\/sessions\/1\/events\/(\d+)/);
+		const match = html.match(/\/sessions\/\d+\/events\/(\d+)/);
 		if (match) {
 			const eventId = match[1];
-			const delRes = await fetch(`${BASE_URL}/sessions/1/events/${eventId}`, {
+			const delRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events/${eventId}`, {
 				method: "DELETE",
 				headers: { "HX-Request": "true" },
 			});
@@ -192,7 +223,7 @@ describe("HTTP server smoke integration", () => {
 		emptyForm.append("timestamp", "2026-09-18T12:00");
 		emptyForm.append("note", "");
 
-		const emptyRes = await fetch(`${BASE_URL}/sessions/1/events`, {
+		const emptyRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events`, {
 			method: "POST",
 			body: emptyForm,
 			headers: { "HX-Request": "true" },
@@ -205,7 +236,7 @@ describe("HTTP server smoke integration", () => {
 		formData.append("timestamp", "2026-09-18T12:30");
 		formData.append("note", "Degassed mead and noted gentle wildflower aroma");
 
-		const postRes = await fetch(`${BASE_URL}/sessions/1/events`, {
+		const postRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events`, {
 			method: "POST",
 			body: formData,
 			headers: { "HX-Request": "true" },
@@ -216,7 +247,7 @@ describe("HTTP server smoke integration", () => {
 		expect(html).toContain("Degassed mead and noted gentle wildflower aroma");
 
 		// Find the event ID to edit
-		const matches = [...html.matchAll(/\/sessions\/1\/events\/(\d+)/g)];
+		const matches = [...html.matchAll(/\/sessions\/\d+\/events\/(\d+)/g)];
 		expect(matches.length).toBeGreaterThan(0);
 		const eventId = matches[0][1];
 
@@ -227,7 +258,7 @@ describe("HTTP server smoke integration", () => {
 		editForm.append("timestamp", "2026-09-18T13:00");
 		editForm.append("note", "Updated: Degassed thoroughly, clarity improving");
 
-		const editRes = await fetch(`${BASE_URL}/sessions/1/events/edit`, {
+		const editRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events/edit`, {
 			method: "POST",
 			body: editForm,
 			headers: { "HX-Request": "true" },
@@ -240,7 +271,7 @@ describe("HTTP server smoke integration", () => {
 		expect(editHtml).toContain("Updated: Degassed thoroughly, clarity improving");
 
 		// Clean up
-		const delRes = await fetch(`${BASE_URL}/sessions/1/events/${eventId}`, {
+		const delRes = await fetch(`${BASE_URL}/sessions/${testSessionId}/events/${eventId}`, {
 			method: "DELETE",
 			headers: { "HX-Request": "true" },
 		});

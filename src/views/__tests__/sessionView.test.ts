@@ -482,7 +482,7 @@ describe("sessionView module", () => {
 			},
 		};
 		const htmlPlural = renderNextSteps(sessionCompactingPlural, "1.000", "1.073");
-		expect(htmlPlural).toContain("Vent 11 dager til (til dag 14):");
+		expect(htmlPlural).toContain("Vent 11 dager til (til dag 14 er fullført):");
 		expect(htmlPlural).toContain("Heverting anbefales når bunnfallet er fast komprimert for å unngå å dra med gjær i flaskene.");
 
 		const sessionCompactingSingular: Session = {
@@ -499,7 +499,41 @@ describe("sessionView module", () => {
 			},
 		};
 		const htmlSingular = renderNextSteps(sessionCompactingSingular, "1.000", "1.073");
-		expect(htmlSingular).toContain("Vent 1 dager til (til dag 14):");
+		expect(htmlSingular).toContain("Vent 1 dag til (til dag 14 er fullført):");
+
+		const sessionCompactingHoursPlural: Session = {
+			...mockSession,
+			status: Status.Aging,
+			fining_state: {
+				stage: "sediment_compacting",
+				days_compacting: 12,
+				days_remaining_to_compact: 2,
+				hours_remaining_to_compact: 36,
+				compaction_progress_pct: 86,
+				sediment_phase: "compacting",
+				safe_to_siphon: false,
+				status_label: "Bunnfall komprimeres (Dag 13 av 14)",
+			},
+		};
+		const htmlHoursPlural = renderNextSteps(sessionCompactingHoursPlural, "1.000", "1.073");
+		expect(htmlHoursPlural).toContain("Vent 36 timer til (til dag 14 er fullført):");
+
+		const sessionCompactingHoursSingular: Session = {
+			...mockSession,
+			status: Status.Aging,
+			fining_state: {
+				stage: "sediment_compacting",
+				days_compacting: 13,
+				days_remaining_to_compact: 1,
+				hours_remaining_to_compact: 1,
+				compaction_progress_pct: 99,
+				sediment_phase: "compacting",
+				safe_to_siphon: false,
+				status_label: "Bunnfall komprimeres (Dag 14 av 14)",
+			},
+		};
+		const htmlHoursSingular = renderNextSteps(sessionCompactingHoursSingular, "1.000", "1.073");
+		expect(htmlHoursSingular).toContain("Vent 1 time til (til dag 14 er fullført):");
 	});
 
 	it("renders fining status badges on session cards", () => {
