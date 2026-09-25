@@ -568,6 +568,24 @@ describe("sessionView module", () => {
 		};
 		const cardHtml2 = renderSessionCard(sessionCompacted);
 		expect(cardHtml2).toContain("Kompakt bunnfall");
+
+		const chitosanEvent: Event = {
+			id: 200,
+			session_id: mockSession.id,
+			type: "addition",
+			timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+			data: { ingredient: "Chitosan", quantity_used: 50, unit: "ml" },
+		};
+		const detailHtml2 = renderSessionDetail(
+			mockSession,
+			[...mockEvents, chitosanEvent],
+			mockInventory,
+		);
+		expect(detailHtml2).toContain("Loggfør flasking");
+		expect(detailHtml2).toContain('class="btn btn-primary btn-sm"');
+		expect(detailHtml2).toMatch(
+			/<button type="button" class="btn btn-primary btn-sm" onclick="[^"]*bottling[^"]*">\s*Loggfør flasking\s*<\/button>/,
+		);
 	});
 
 	it("renders collapsible cards (Next Steps, Fermentation Curve) using details and collapse classes", () => {

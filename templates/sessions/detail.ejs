@@ -607,8 +607,7 @@
             </button>
           <% } %>
           <% if (session.fining_state && session.fining_state.safe_to_siphon) { %>
-            <button type="button" class="btn btn-sm btn-success text-white gap-1" onclick="document.getElementById('event-type-select').value='bottling'; openAddEventModal();">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('event-type-select').value='bottling'; openAddEventModal();">
               Loggfør flasking
             </button>
           <% } %>
@@ -619,8 +618,7 @@
 
   <div class="flex items-center justify-between mb-4">
     <h3 id="event-history-title" class="text-xl font-bold text-base-content scroll-mt-4">Logg</h3>
-    <button type="button" class="btn btn-primary btn-sm gap-1" onclick="openAddEventModal()">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+    <button type="button" class="btn btn-primary btn-sm" onclick="openAddEventModal()">
       Loggfør hendelse
     </button>
   </div>
