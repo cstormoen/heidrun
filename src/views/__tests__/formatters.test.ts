@@ -5,6 +5,7 @@ import {
 	formatCost,
 	formatDateForDisplay,
 	formatDateTimeForDisplay,
+	formatForDateTimeLocal,
 	formatInventoryQuantity,
 	formatPh,
 	formatQuantity,
@@ -43,6 +44,40 @@ describe("formatters", () => {
 			expect(formatDateTimeForDisplay(undefined)).toBe("");
 			expect(formatDateTimeForDisplay("")).toBe("");
 			expect(formatDateTimeForDisplay("invalid-date")).toBe("");
+		});
+	});
+
+	describe("formatForDateTimeLocal", () => {
+		it("formats date to YYYY-MM-DDTHH:mm using local timezone parts", () => {
+			const d = new Date("2026-09-08T17:35:00.000Z");
+			const yyyy = d.getFullYear();
+			const mm = String(d.getMonth() + 1).padStart(2, "0");
+			const dd = String(d.getDate()).padStart(2, "0");
+			const hh = String(d.getHours()).padStart(2, "0");
+			const min = String(d.getMinutes()).padStart(2, "0");
+
+			expect(formatForDateTimeLocal("2026-09-08T17:35:00.000Z")).toBe(
+				`${yyyy}-${mm}-${dd}T${hh}:${min}`,
+			);
+		});
+
+		it("normalizes SQLite space-separated date strings", () => {
+			const res = formatForDateTimeLocal("2026-09-08 17:35:00");
+			const d = new Date("2026-09-08T17:35:00");
+			const yyyy = d.getFullYear();
+			const mm = String(d.getMonth() + 1).padStart(2, "0");
+			const dd = String(d.getDate()).padStart(2, "0");
+			const hh = String(d.getHours()).padStart(2, "0");
+			const min = String(d.getMinutes()).padStart(2, "0");
+
+			expect(res).toBe(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+		});
+
+		it("handles undefined, null, empty and invalid gracefully", () => {
+			expect(formatForDateTimeLocal(undefined)).toBe("");
+			expect(formatForDateTimeLocal(null)).toBe("");
+			expect(formatForDateTimeLocal("")).toBe("");
+			expect(formatForDateTimeLocal("invalid")).toBe("");
 		});
 	});
 

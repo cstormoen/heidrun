@@ -29,9 +29,9 @@ export function getEventIcon(type: string): string {
 		case "addition":
 			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-addition-blue, #3b82f6)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-8c-.5 4-2 6.5-4 8s-3 3.5-3 5.5a7 7 0 0 0 7 7z" /></svg>';
 		case "racking":
-			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-status-aging)"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>';
+			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-apothecary-teal, #3E7B7D)"><path stroke-linecap="round" stroke-linejoin="round" d="M1.5 14.5h8.5v6.5h12.5M4 5.5h3.5M4.5 5.5V7c-1.2 1-2 2-2 3.8 0 1.8 1.1 2.7 2.7 2.7h1c1.6 0 2.7-.9 2.7-2.7 0-1.8-.8-2.8-2-3.8V5.5M16 12h3.5M16.5 12v1.5c-1.2 1-2 2-2 3.8 0 1.8 1.1 2.7 2.7 2.7h1c1.6 0 2.7-.9 2.7-2.7 0-1.8-.8-2.8-2-3.8V12M5.8 12V4.5C5.8 2.8 8.2 2.8 8.5 4.5C9.2 8 13.5 11 17.5 12.5V18.5" /></svg>';
 		case "bottling":
-			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-status-bottled)"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>';
+			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-status-bottled)"><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 3h3M6 3v4c0 1.5-2 2.5-2 4v9q0 1 1 1h4q1 0 1-1v-9c0-1.5-2-2.5-2-4V3zM15.5 3h3M16 3v4c0 1.5-2 2.5-2 4v9q0 1 1 1h4q1 0 1-1v-9c0-1.5-2-2.5-2-4V3z" /></svg>';
 		case "comment":
 			return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" style="color: var(--color-pollen)"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>';
 		default:
@@ -45,7 +45,7 @@ export const EVENT_ANNOTATION_CONFIG: Record<
 > = {
 	ph_reading: { label: "pH-måling", color: "#3E7B7D" }, // Apothecary Teal
 	addition: { label: "Tilsetning", color: "#F4C430" }, // Ferment Gold
-	racking: { label: "Omstikking", color: "#7A4A3A" }, // Oak Barrel
+	racking: { label: "Omstikking", color: "#3E7B7D" }, // Apothecary Teal
 	bottling: { label: "Flasket", color: "#4E795B" }, // Botanical Sage
 };
 

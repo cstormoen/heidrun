@@ -24,6 +24,22 @@ export function formatDateTimeForDisplay(
 	return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
 }
 
+export function formatForDateTimeLocal(
+	dateStr?: string | Date | null,
+): string {
+	if (!dateStr) return "";
+	const clean =
+		typeof dateStr === "string" ? dateStr.trim().replace(" ", "T") : dateStr;
+	const d = typeof clean === "string" ? new Date(clean) : clean;
+	if (isNaN(d.getTime())) return "";
+	const yyyy = d.getFullYear();
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	const hh = String(d.getHours()).padStart(2, "0");
+	const min = String(d.getMinutes()).padStart(2, "0");
+	return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
 export function formatTimelineDate(dateStr?: string | Date | null): string {
 	if (!dateStr) return "";
 	const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;

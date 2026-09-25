@@ -55,9 +55,14 @@ function sanitizeUrl(rawUrl?: string | null): string | undefined {
 	}
 }
 
-function parseTimestamp(raw?: string | null): string | undefined {
+export function parseTimestamp(raw?: string | null): string | undefined {
 	if (!raw) return undefined;
-	const date = new Date(raw);
+	const clean = raw.trim();
+	if (!clean) return undefined;
+	const normalized = /^\d{4}-\d{2}-\d{2}$/.test(clean)
+		? `${clean}T00:00:00`
+		: clean.replace(" ", "T");
+	const date = new Date(normalized);
 	return isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 

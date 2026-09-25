@@ -590,7 +590,7 @@
         <div class="flex gap-2 flex-wrap">
           <% if (!session.is_racked) { %>
             <button type="button" class="btn btn-sm btn-warning gap-1" onclick="document.getElementById('event-type-select').value='racking'; openAddEventModal();">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M1.5 14.5h8.5v6.5h12.5M4 5.5h3.5M4.5 5.5V7c-1.2 1-2 2-2 3.8 0 1.8 1.1 2.7 2.7 2.7h1c1.6 0 2.7-.9 2.7-2.7 0-1.8-.8-2.8-2-3.8V5.5M16 12h3.5M16.5 12v1.5c-1.2 1-2 2-2 3.8 0 1.8 1.1 2.7 2.7 2.7h1c1.6 0 2.7-.9 2.7-2.7 0-1.8-.8-2.8-2-3.8V12M5.8 12V4.5C5.8 2.8 8.2 2.8 8.5 4.5C9.2 8 13.5 11 17.5 12.5V18.5" /></svg>
               Loggfør omstikking
             </button>
           <% } %>
@@ -687,7 +687,7 @@
                   <div class="text-sm text-base-content mt-0.5 leading-snug"><%= e.data.note %></div>
                 <% } %>
               </div>
-              <button class="btn btn-ghost btn-xs text-primary ml-auto" data-event-id="<%= e.id %>" data-delete-url="/sessions/<%= session.id %>/events/<%= e.id %>" onclick='openEditEventModal(<%- JSON.stringify(e).replace(/'/g, "&#39;") %>)' title="Rediger hendelse">
+              <button class="btn btn-ghost btn-xs text-primary ml-auto" data-event-id="<%= e.id %>" data-delete-url="/sessions/<%= session.id %>/events/<%= e.id %>" onclick="openEditEventModal(<%= e.id %>)" title="Rediger hendelse">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
               </button>
             </div>
@@ -724,7 +724,7 @@
 
         <div class="form-control w-full mb-3">
           <label class="label"><span class="label-text">Dato og klokkeslett</span></label>
-          <input type="datetime-local" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
+          <input type="datetime-local" step="60" name="timestamp" id="event-timestamp-input" required class="input input-bordered w-full" />
         </div>
 
         <!-- SG Container (for sg_reading) -->
@@ -947,6 +947,22 @@
       }
     }
 
+    const sessionEventsMap = new Map(<%- JSON.stringify(session.events || []).replace(/</g, '\\u003c') %>.map(function(e) { return [e.id, e]; }));
+
+    function formatForDateTimeLocal(dateInput) {
+      if (!dateInput) return "";
+      const cleanStr = typeof dateInput === "string" ? dateInput.trim().replace(" ", "T") : dateInput;
+      const d = new Date(cleanStr);
+      if (isNaN(d.getTime())) return "";
+      const pad = function(n) { return String(n).padStart(2, "0"); };
+      const yyyy = d.getFullYear();
+      const MM = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mm = pad(d.getMinutes());
+      return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+    }
+
     function openAddEventModal() {
       const modal = document.getElementById('event_modal');
       const form = document.getElementById('event-form');
@@ -965,9 +981,7 @@
       document.getElementById('event-id').value = "";
       document.getElementById('event-type-select').value = "sg_reading";
 
-      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-      const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
-      document.getElementById('event-timestamp-input').value = localISOTime;
+      document.getElementById('event-timestamp-input').value = formatForDateTimeLocal(new Date());
 
       document.getElementById('event-sg-input').value = "";
       document.getElementById('event-ph-input').value = "";
@@ -981,7 +995,12 @@
       modal.showModal();
     }
 
-    function openEditEventModal(event) {
+    function openEditEventModal(eventOrId) {
+      const event = (typeof eventOrId === 'object' && eventOrId !== null)
+        ? eventOrId
+        : sessionEventsMap.get(Number(eventOrId));
+      if (!event) return;
+
       const modal = document.getElementById('event_modal');
       const form = document.getElementById('event-form');
       document.getElementById('event-modal-title').innerText = "Rediger hendelse";
@@ -1000,8 +1019,7 @@
       document.getElementById('event-id').value = event.id;
       document.getElementById('event-type-select').value = event.type;
 
-      const localTime = new Date(new Date(event.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-      document.getElementById('event-timestamp-input').value = localTime;
+      document.getElementById('event-timestamp-input').value = formatForDateTimeLocal(event.timestamp);
 
       document.getElementById('event-sg-input').value = "";
       document.getElementById('event-ph-input').value = "";
